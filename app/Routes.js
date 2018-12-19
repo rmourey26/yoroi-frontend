@@ -17,9 +17,11 @@ import SupportSettingsPage from './containers/settings/categories/SupportSetting
 import TermsOfUseSettingsPage from './containers/settings/categories/TermsOfUseSettingsPage';
 import TermsOfUsePage from './containers/profile/TermsOfUsePage';
 import WalletSettingsPage from './containers/settings/categories/WalletSettingsPage';
+import AccountsSettingsPage from './containers/settings/categories/AccountsSettingsPage';
 
 // Dynamic container loading - resolver loads file relative to '/app/' directory
 const LoadingPage = resolver('containers/LoadingPage');
+const AuthPage = resolver('containers/AuthPage');
 const Wallet = resolver('containers/wallet/Wallet');
 const WalletSummaryPage = resolver('containers/wallet/WalletSummaryPage');
 const WalletSendPage = resolver('containers/wallet/WalletSendPage');
@@ -90,10 +92,18 @@ export const Routes = (
         path="support"
         component={(props) => <SupportSettingsPage {...props} stores={stores} actions={actions} />}
       />
+      <Route
+        path={ROUTES.SETTINGS.ACCOUNTS}
+        component={(props) => <AccountsSettingsPage {...props} stores={stores} actions={actions} />}
+      />
     </Route>
     <Route
       path={ROUTES.DAEDALUS_TRANFER.ROOT}
       component={(props) => <DaedalusTransferPage {...props} stores={stores} actions={actions} />}
+    />
+    <Route
+      path={ROUTES.AUTH.DROPBOX}
+      component={(props) => <AuthPage {...props} stores={stores} actions={actions} />}
     />
   </div>
 );

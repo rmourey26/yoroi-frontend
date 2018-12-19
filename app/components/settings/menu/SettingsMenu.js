@@ -27,6 +27,11 @@ const messages = defineMessages({
     defaultMessage: '!!!Terms of use',
     description: 'Label for the "Terms of use" link in the settings menu.',
   },
+  accounts: {
+    id: 'settings.accounts.link.label',
+    defaultMessage: '!!!Linked accounts',
+    description: 'Label for the "Linked accounts" link in the settings menu.',
+  },
 });
 
 type Props = {
@@ -80,6 +85,13 @@ export default class SettingsMenu extends Component<Props> {
             onClick={() => onItemClick(ROUTES.SETTINGS.SUPPORT)}
             active={isActiveItem(ROUTES.SETTINGS.SUPPORT)}
             className="support"
+          />
+
+          <SettingsMenuItem
+            label={intl.formatMessage(messages.accounts)}
+            onClick={() => onItemClick(ROUTES.SETTINGS.ACCOUNTS)}
+            active={isActiveItem(ROUTES.SETTINGS.ACCOUNTS)}
+            className="accounts"
           />
         </div>
       </div>

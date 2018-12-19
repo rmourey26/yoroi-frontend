@@ -7,6 +7,7 @@ import TopbarStore from './toplevel/TopbarStore';
 import UiDialogsStore from './toplevel/UiDialogsStore';
 import UiNotificationsStore from './toplevel/UiNotificationsStore';
 import LoadingStore from './toplevel/LoadingStore';
+import AccountsStore from './toplevel/AccountsStore';
 import setupAdaStores from './ada/index';
 import type { AdaStoresMap } from './ada/index';
 import environment from '../environment';
@@ -23,6 +24,7 @@ const storeClasses = {
   uiDialogs: UiDialogsStore,
   uiNotifications: UiNotificationsStore,
   loading: LoadingStore,
+  accounts: AccountsStore,
 };
 
 export type StoresMap = {
@@ -33,6 +35,7 @@ export type StoresMap = {
   uiDialogs: UiDialogsStore,
   uiNotifications: UiNotificationsStore,
   loading: LoadingStore,
+  accounts: AccountsStore,
 
   substores: { ada: AdaStoresMap },
   router: RouterStore,
@@ -47,6 +50,7 @@ const stores = observable({
   uiDialogs: null,
   uiNotifications: null,
   loading: null,
+  accounts: null,
 
   substores: {},
   router: null,

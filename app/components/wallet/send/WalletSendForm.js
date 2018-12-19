@@ -7,7 +7,9 @@ import Button from 'react-polymorph/lib/components/Button';
 import SimpleButtonSkin from 'react-polymorph/lib/skins/simple/raw/ButtonSkin';
 import Input from 'react-polymorph/lib/components/Input';
 import NumericInput from 'react-polymorph/lib/components/NumericInput';
+import TextArea from 'react-polymorph/lib/components/TextArea';
 import SimpleInputSkin from 'react-polymorph/lib/skins/simple/raw/InputSkin';
+import TextAreaSkin from 'react-polymorph/lib/skins/simple/raw/TextAreaSkin';
 import { defineMessages, intlShape } from 'react-intl';
 import BigNumber from 'bignumber.js';
 import SvgInline from 'react-svg-inline';
@@ -99,7 +101,22 @@ export const messages = defineMessages({
     id: 'wallet.send.form.sendingIsDisabled',
     defaultMessage: '!!!Cannot send a transaction while there is a pending one',
     description: '"Cannot send a transaction while there is a pending one" error message',
-  }
+  },
+  memoButton: {
+    id: 'wallet.send.memo.button',
+    defaultMessage: '!!!Add memo',
+    description: 'Memo button text',
+  },
+  memoLabel: {
+    id: 'wallet.send.memo.label',
+    defaultMessage: '!!!Memo',
+    description: 'Label for memo textarea',
+  },
+  memoPlaceholder: {
+    id: 'wallet.send.memo.placeholder',
+    defaultMessage: '!!!Add memo to your transaction',
+    description: 'Placeholder for memo textarea',
+  },
 });
 
 messages.fieldIsRequired = globalMessages.fieldIsRequired;
@@ -123,6 +140,7 @@ type State = {
   isTransactionFeeCalculated: boolean,
   transactionFee: BigNumber,
   transactionFeeError: ?string,
+  isMemoOpen: boolean,
 };
 
 @observer
@@ -136,6 +154,7 @@ export default class WalletSendForm extends Component<Props, State> {
     isTransactionFeeCalculated: false,
     transactionFee: new BigNumber(0),
     transactionFeeError: null,
+    isMemoOpen: false,
   };
 
   /** We need to track form submitting state in order to avoid calling
@@ -206,6 +225,11 @@ export default class WalletSendForm extends Component<Props, State> {
           return [isValid, this.context.intl.formatMessage(messages.invalidAmount)];
         }],
       },
+      memo: {
+        label: this.context.intl.formatMessage(messages.memoLabel),
+        placeholder: this.context.intl.formatMessage(messages.memoPlaceholder),
+        value: '',
+      }
     },
   }, {
     options: {
@@ -214,6 +238,11 @@ export default class WalletSendForm extends Component<Props, State> {
       validationDebounceWait: 250,
     },
   });
+
+  handleToggleMemo = () => {
+    const { isMemoOpen } = this.state;
+    this.setState({ isMemoOpen: !isMemoOpen });
+  }
 
   render() {
     const { form } = this;
@@ -227,13 +256,15 @@ export default class WalletSendForm extends Component<Props, State> {
     } = this.props;
     const {
       transactionFee,
-      transactionFeeError
+      transactionFeeError,
+      isMemoOpen,
     } = this.state;
 
     const amountField = form.$('amount');
     const receiverField = form.$('receiver');
     const amountFieldProps = amountField.bind();
     const totalAmount = formattedAmountToBigNumber(amountFieldProps.value).add(transactionFee);
+    const memoField = form.$('memo');
 
     const hasPendingTxWarning = (
       <div className={styles.contentWarning}>
@@ -272,6 +303,18 @@ export default class WalletSendForm extends Component<Props, State> {
               total={totalAmount.toFormat(currencyMaxFractionalDigits)}
               skin={<AmountInputSkin />}
             />
+          </div>
+
+          <div className={styles.addMemoArea}>
+            <button className={styles.addMemoButton} onClick={this.handleToggleMemo} type="button">
+              {intl.formatMessage(messages.memoButton)}
+            </button>
+            {isMemoOpen && (
+              <TextArea
+                {...memoField.bind()}
+                skin={<TextAreaSkin />}
+              />
+            )}
           </div>
 
           {this._makeInvokeConfirmationButton()}

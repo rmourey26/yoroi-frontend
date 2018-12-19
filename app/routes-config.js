@@ -19,6 +19,7 @@ export const ROUTES = {
   SETTINGS: {
     ROOT: '/settings',
     WALLET: '/settings/wallet',
+    ACCOUNTS: '/settings/accounts',
     GENERAL: '/settings/general',
     TERMS_OF_USE: '/settings/terms-of-use',
     SUPPORT: '/settings/support',
@@ -26,5 +27,8 @@ export const ROUTES = {
   },
   DAEDALUS_TRANFER: {
     ROOT: '/daedalus-transfer',
-  }
+  },
+  AUTH: {
+    DROPBOX: '/auth/dropbox',
+  },
 };

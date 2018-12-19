@@ -6,7 +6,8 @@
 }
 
 .amountInput,
-.receiverInput {
+.receiverInput,
+.addMemoArea {
   position: relative;
   margin-bottom: 20px;
 }
@@ -48,4 +49,29 @@
   font-weight: 600;
   margin-bottom: 0.5em;
   color: var(--theme-error-text-color);
+}
+
+.addMemoButton {
+  position: relative;
+  color: var(--theme-input-label-color);
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  padding-left: 10px;
+  text-transform: uppercase;
+  font-family: var(--font-medium), sans-serif;
+  line-height: 1.38;
+  letter-spacing: 1px;
+  cursor: pointer;
+  &:after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    right: -10px;
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-left: 4px solid var(--theme-input-label-color);
+  }
 }
