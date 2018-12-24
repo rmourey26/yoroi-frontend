@@ -42,9 +42,7 @@ export default class LoadingStore extends Store {
 
   _isRefresh = (): boolean => this.isLoading;
 
-  _redirectToLoading = (): void => (
-    this.actions.router.goToRoute.trigger({ route: ROUTES.ROOT })
-  );
+  _redirectToLoading = (): void => {}
 
   /** Select which page to open after app is done loading */
   _openPageAfterLoad = async (): Promise<void> => {
@@ -58,12 +56,12 @@ export default class LoadingStore extends Store {
         // Dynamic Initialization of Topbar Categories
         this.stores.topbar.initCategories();
 
-        this.actions.router.goToRoute.trigger({
+        /*this.actions.router.goToRoute.trigger({
           route: ROUTES.WALLETS.TRANSACTIONS,
           params: { id: firstWallet.id }
-        });
+        });*/
       } else {
-        this.actions.router.goToRoute.trigger({ route: ROUTES.WALLETS.ADD });
+        // this.actions.router.goToRoute.trigger({ route: ROUTES.WALLETS.ADD });
       }
     }
   }

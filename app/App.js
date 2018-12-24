@@ -37,6 +37,14 @@ export default class App extends Component<{
     }
   }
 
+  componentDidMount() {
+    console.log('test', this.props.history, window.location);
+  }
+
+  componentWillReceiveProps() {
+    console.log('test2', this.props.history, window.location);
+  }
+
   render() {
     const { stores, actions, history } = this.props;
     const locale = stores.profile.currentLocale;

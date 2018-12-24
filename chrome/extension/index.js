@@ -21,6 +21,8 @@ const initializeYoroi = async () => {
   const history = syncHistoryWithStore(hashHistory, router);
   const stores = createStores(api, actions, router);
 
+  console.log('hi!');
+
   window.yoroi = {
     api,
     actions,

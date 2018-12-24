@@ -15,9 +15,25 @@
     "page": "background.html"
   },
   "permissions": [
+    "*",
+    "identity",
     "tabs",
     "storage",
-    "*://connect.trezor.io/*"
+    "*://connect.trezor.io/*",
+    "*://www.dropbox.com/*"
+  ],
+  "externally_connectable": {
+    "ids": [
+      "*"
+    ],
+    "matches": [
+      "*://www.dropbox.com/*",
+      "*://dropbox.com/*"
+    ],
+    "accepts_tls_channel_id": false
+  },
+  "web_accessible_resources": [
+    "*"
   ],
   "content_scripts": [
     {

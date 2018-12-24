@@ -26,7 +26,7 @@ export default class GeneralSettings extends Component {
     return (
       <div className={componentClassName}>
         <div className={styles.title}>Dropbox</div>
-        <Link to="/auth/dropbox">Authorize Yoroi in Dropbox</Link>
+        <a href="https://www.dropbox.com/oauth2/authorize?client_id=9elutclicnuxx4o&&response_type=token&redirect_uri=chrome-extension://bflmcienanhdibafopagdcaaenkmoago/main_window.html">Authorize Yoroi in Dropbox</a>
       </div>
     );
   }
