@@ -4,7 +4,8 @@ const networkForLocalStorage = String(environment.NETWORK);
 const storageKeys = {
   USER_LOCALE: networkForLocalStorage + '-USER-LOCALE',
   TERMS_OF_USE_ACCEPTANCE: networkForLocalStorage + '-TERMS-OF-USE-ACCEPTANCE',
-  THEME: networkForLocalStorage + '-THEME'
+  THEME: networkForLocalStorage + '-THEME',
+  DROPBOX_TOKEN: networkForLocalStorage + '-DROPBOX-TOKEN',
 };
 
 /**
@@ -65,6 +66,33 @@ export default class LocalStorageApi {
       resolve();
     } catch (error) {} // eslint-disable-line
   });
+
+  getUserDropboxToken = (): Promise<void> => new Promise((resolve, reject) => {
+    try {
+      const token = localStorage.getItem(storageKeys.DROPBOX_TOKEN);
+      resolve(token);
+    } catch (error) {
+      return reject(error);
+    }
+  });
+
+  setUserDropboxToken = (token: string): Promise<void> => new Promise((resolve, reject) => {
+    try {
+      localStorage.setItem(storageKeys.DROPBOX_TOKEN, token);
+      resolve();
+    } catch (error) {
+      return reject(error);
+    }
+  });
+
+  unsetUserDropboxToken = (): Promise<void> => new Promise((resolve, reject) => {
+    try {
+      localStorage.removeItem(storageKeys.DROPBOX_TOKEN);
+      resolve();
+    } catch (error) {
+      return reject(error);
+    }
+  })
 
   async reset() {
     await this.unsetUserLocale(); // TODO: remove after saving locale to API is restored

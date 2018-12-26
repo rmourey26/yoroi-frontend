@@ -20,7 +20,7 @@ export const messages = defineMessages({
 @observer
 export default class AuthPage extends Component<InjectedProps> {
   componentDidMount() {
-    console.log('props', this.props);
+    console.log('auth', this.props, window.location);
   }
 
   render() {

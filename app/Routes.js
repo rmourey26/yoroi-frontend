@@ -35,6 +35,10 @@ export const Routes = (
 ): Node => (
   <div>
     <Route
+      path={ROUTES.ROOT}
+      component={(props) => <LoadingPage {...props} stores={stores} actions={actions} />}
+    />
+    <Route
       path={ROUTES.PROFILE.LANGUAGE_SELECTION}
       component={(props) => <LanguageSelectionPage {...props} stores={stores} actions={actions} />}
     />
@@ -98,7 +102,7 @@ export const Routes = (
       component={(props) => <DaedalusTransferPage {...props} stores={stores} actions={actions} />}
     />
     <Route
-      path="/access-token"
+      path="/:access_token(access_token=.*)"
       component={(props) => <AuthPage {...props} stores={stores} actions={actions} />}
     />
   </div>
