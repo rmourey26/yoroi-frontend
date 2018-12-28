@@ -12,9 +12,10 @@ export default class AccountsSettingsPage extends Component<InjectedProps> {
   };
 
   render() {
-    const { setProfileLocaleRequest, LANGUAGE_OPTIONS, currentLocale } = this.props.stores.profile;
+    const { accounts } = this.props.stores;
+    const { dropboxToken } = accounts;
     return (
-      <AccountsSettings />
+      <AccountsSettings token={dropboxToken} saveMemo={this.props.actions.accountsActions.saveMemo.trigger} />
     );
   }
 

@@ -44,6 +44,7 @@ export default class LocalStorageApi {
   getTermsOfUseAcceptance = (): Promise<boolean> => new Promise((resolve, reject) => {
     try {
       const accepted = localStorage.getItem(storageKeys.TERMS_OF_USE_ACCEPTANCE);
+      console.log('test from ls', accepted);
       if (!accepted) return resolve(false);
       resolve(JSON.parse(accepted));
     } catch (error) {
@@ -70,6 +71,7 @@ export default class LocalStorageApi {
   getUserDropboxToken = (): Promise<void> => new Promise((resolve, reject) => {
     try {
       const token = localStorage.getItem(storageKeys.DROPBOX_TOKEN);
+      console.log('from ls', token);
       resolve(token);
     } catch (error) {
       return reject(error);

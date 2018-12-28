@@ -32,7 +32,7 @@ export default class WalletSendPage extends Component<Props> {
     if (!activeWallet) throw new Error('Active wallet required for WalletSendPage.');
 
     const { intl } = this.context;
-    const { uiDialogs } = this.props.stores;
+    const { uiDialogs, accounts } = this.props.stores;
     const { actions } = this.props;
     const { isValidAddress } = wallets;
     const { calculateTransactionFee, validateAmount, hasAnyPending } = transactions;
@@ -53,6 +53,8 @@ export default class WalletSendPage extends Component<Props> {
         trezorTWalletConfirmationDialogRenderCallback={this.trezorTWalletDoConfirmation}
         hasAnyPending={hasAnyPending}
         isTrezorTWallet={activeWallet.isTrezorTWallet}
+        dropboxToken={accounts.dropboxToken}
+        saveMemo={actions.accountsActions.saveMemo.trigger}
       />
     );
   }

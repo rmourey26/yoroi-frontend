@@ -85,6 +85,7 @@ export default class SettingsStore extends Store {
   }
 
   @computed get areTermsOfUseAccepted(): boolean {
+    console.log('test from store', this.getTermsOfUseAcceptanceRequest.result);
     return this.getTermsOfUseAcceptanceRequest.result === true;
   }
 

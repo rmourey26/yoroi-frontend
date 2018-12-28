@@ -16,17 +16,29 @@ const messages = defineMessages({
 
 
 @observer
-export default class GeneralSettings extends Component {
+export default class AccountsSettings extends Component {
   static contextTypes = {
     intl: intlShape.isRequired,
   };
 
+  handleClick = () => {
+    this.props.saveMemo('dfdfdsfsd');
+  }
+
   render() {
+    const { token } = this.props;
     const componentClassName = classNames([styles.component, 'general']);
     return (
       <div className={componentClassName}>
         <div className={styles.title}>Dropbox</div>
-        <a href="https://www.dropbox.com/oauth2/authorize?client_id=9elutclicnuxx4o&&response_type=token&redirect_uri=chrome-extension://bflmcienanhdibafopagdcaaenkmoago/main_window.html">Authorize Yoroi in Dropbox</a>
+        {!token ? (
+          <a
+            href="https://www.dropbox.com/oauth2/authorize?client_id=9elutclicnuxx4o&&response_type=token&redirect_uri=chrome-extension://bflmcienanhdibafopagdcaaenkmoago/main_window.html"
+          >
+            Authorize Yoroi in Dropbox
+          </a>
+        ) : <div>Dropbox account linked</div>}
+        <div onClick={this.handleClick}>TEST</div>
       </div>
     );
   }

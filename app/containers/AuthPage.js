@@ -1,31 +1,27 @@
 // @flow
 import React, { Component } from 'react';
 import { observer } from 'mobx-react';
-import { defineMessages } from 'react-intl';
 import LoadingSpinner from '../components/widgets/LoadingSpinner';
 import CenteredLayout from '../components/layout/CenteredLayout';
-import Loading from '../components/loading/Loading';
-import adaLogo from '../assets/images/ada-logo.inline.svg';
-import cardanoLogo from '../assets/images/cardano-logo.inline.svg';
 import type { InjectedProps } from '../types/injectedPropsType';
 
-export const messages = defineMessages({
-  loading: {
-    id: 'loading.screen.loading',
-    defaultMessage: '!!!loading components',
-    description: 'Message "loading components" on the loading screen.'
-  },
-});
+import { ROUTES } from '../routes-config';
 
 @observer
 export default class AuthPage extends Component<InjectedProps> {
   componentDidMount() {
-    console.log('auth', this.props, window.location);
+    const { stores, actions } = this.props;
+    const { currentRoute } = stores.app;
+    const { dropboxToken } = stores.accounts;
+    const { updateDropboxToken } = actions.accountsActions;
+    if (!dropboxToken) {
+      const token = currentRoute.slice(14, 78);
+      updateDropboxToken.trigger(token);
+    }
+    actions.router.goToRoute.trigger({ route: ROUTES.SETTINGS.ACCOUNTS });
   }
 
   render() {
-    const { stores } = this.props;
-    const { loading } = stores;
     return (
       <CenteredLayout>
         <LoadingSpinner />

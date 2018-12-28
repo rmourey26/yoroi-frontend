@@ -134,6 +134,8 @@ type Props = {
   isDialogOpen: Function,
   webWalletConfirmationDialogRenderCallback: Function,
   trezorTWalletConfirmationDialogRenderCallback: Function,
+  dropboxToken?: string,
+  saveMemo: Function,
 };
 
 type State = {
@@ -141,6 +143,7 @@ type State = {
   transactionFee: BigNumber,
   transactionFeeError: ?string,
   isMemoOpen: boolean,
+  isMemoRemoveConfirmationOpen: boolean,
 };
 
 @observer
@@ -155,6 +158,7 @@ export default class WalletSendForm extends Component<Props, State> {
     transactionFee: new BigNumber(0),
     transactionFeeError: null,
     isMemoOpen: false,
+    isMemoRemoveConfirmationOpen: false,
   };
 
   /** We need to track form submitting state in order to avoid calling
@@ -240,7 +244,13 @@ export default class WalletSendForm extends Component<Props, State> {
   });
 
   handleToggleMemo = () => {
+    const { saveMemo } = this.props;
     const { isMemoOpen } = this.state;
+    const { form } = this;
+    const memoField = form.$('memo');
+    if (memoField.value.trim()) {
+      saveMemo();
+    }
     this.setState({ isMemoOpen: !isMemoOpen });
   }
 
@@ -253,6 +263,7 @@ export default class WalletSendForm extends Component<Props, State> {
       currencyMaxIntegerDigits,
       currencyMaxFractionalDigits,
       hasAnyPending,
+      dropboxToken = '',
     } = this.props;
     const {
       transactionFee,
