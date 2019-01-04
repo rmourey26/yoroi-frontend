@@ -11,11 +11,13 @@ export default class AccountsStore extends Store {
   /* eslint-disable max-len */
   @observable getUserDropboxTokenRequest: Request<string> = new Request(this.api.localStorage.getUserDropboxToken);
   @observable setUserDropboxTokenRequest: Request<string> = new Request(this.api.localStorage.setUserDropboxToken);
+  @observable saveMemoToLocalRequest: Request<string> = new Request(this.api.localStorage.saveMemoToStorage);
   /* eslint-enable max-len */
 
   setup() {
     this.actions.accountsActions.updateDropboxToken.listen(this._updateDropboxToken);
     this.actions.accountsActions.saveMemo.listen(this._saveMemo);
+    this.actions.accountsActions.saveMemoToLocal.listen(this._saveMemoToLocal);
     this._getToken();
   }
 
@@ -33,6 +35,10 @@ export default class AccountsStore extends Store {
     this.getUserDropboxTokenRequest.execute();
   }
 
+  _saveMemoToLocal = async (memo) => {
+    await this.saveMemoToLocalRequest.execute(memo);
+  }
+
   _saveMemo = async (memo = 'hey') => {
     try {
       const accessToken = await this.getUserDropboxTokenRequest.execute();
@@ -40,7 +46,10 @@ export default class AccountsStore extends Store {
       const data = await db.filesListFolder({ path: '', fetch: axios });
       const { entries = [] } = data;
       const folder = find(entries, x => x.name === 'YoroiMemos') || await db.filesCreateFolderV2({ path: '/YoroiMemos' });
-      const saved = await db.filesUpload({ path: '/YoroiMemos/first.txt', contents: memo });
+      const memos = await db.filesListFolder({ path: '/YoroiMemos' });
+      const num = memos.entries.length;
+      console.log('amount', memos);
+      const saved = await db.filesUpload({ path: `/YoroiMemos/${num + 1}.txt`, contents: memo });
       console.log('save memo result!', saved);
     } catch (err) {
       console.log('err', err);

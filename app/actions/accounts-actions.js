@@ -6,4 +6,5 @@ import Action from './lib/Action';
 export default class AccountsActions {
   updateDropboxToken: Action<any> = new Action;
   saveMemo: Action<any> = new Action;
+  saveMemoToLocal: Action<any> = new Action;
 }

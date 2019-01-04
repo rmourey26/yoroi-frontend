@@ -63,15 +63,14 @@ export default class WalletSendPage extends Component<Props> {
     * Callback that creates a container to avoid the component knowing about actions/stores */
   webWalletDoConfirmation = (dialogProps: DialogProps): Node => {
     const { actions, stores } = this.props;
+    const data = {
+      ...dialogProps,
+      actions,
+      stores,
+    };
+
     return (<WalletSendConfirmationDialogContainer
-      actions={actions}
-      stores={stores}
-      amount={dialogProps.amount}
-      receiver={dialogProps.receiver}
-      totalAmount={dialogProps.totalAmount}
-      transactionFee={dialogProps.transactionFee}
-      amountToNaturalUnits={dialogProps.amountToNaturalUnits}
-      currencyUnit={dialogProps.currencyUnit}
+      {...data}
     />);
   };
 

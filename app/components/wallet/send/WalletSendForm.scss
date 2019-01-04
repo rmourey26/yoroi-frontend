@@ -75,3 +75,16 @@
     border-left: 4px solid var(--theme-input-label-color);
   }
 }
+.linkInfo {
+  font-family: var(--font-light), sans-serif;
+  line-height: 1.38;
+  letter-spacing: 1px;
+  padding-left: 10px;
+}
+.link {
+  text-decoration: none;
+  color: inherit;
+  &:hover {
+    text-decoration: underline;
+  }
+}

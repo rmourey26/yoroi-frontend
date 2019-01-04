@@ -46,6 +46,7 @@ type Props = {
   isSubmitting: boolean,
   error: ?LocalizableError,
   currencyUnit: string,
+  memo: string,
 };
 
 @observer
@@ -80,12 +81,13 @@ export default class WalletSendConfirmationDialog extends Component<Props> {
   submit() {
     this.form.submit({
       onSuccess: (form) => {
-        const { receiver, amount, amountToNaturalUnits } = this.props;
+        const { receiver, amount, amountToNaturalUnits, memo } = this.props;
         const { walletPassword } = form.values();
         const transactionData = {
           receiver,
           amount: amountToNaturalUnits(amount),
           password: walletPassword,
+          memo,
         };
         this.props.onSubmit(transactionData);
       },

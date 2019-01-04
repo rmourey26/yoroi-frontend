@@ -14,6 +14,7 @@ export type DialogProps = {
   transactionFee: string,
   amountToNaturalUnits: (amountWithFractions: string) => string,
   currencyUnit: string,
+  memo: string,
 };
 type Props = InjectedProps & DialogProps;
 
@@ -27,7 +28,8 @@ export default class WalletSendConfirmationDialogContainer extends Component<Pro
   render() {
     const {
       actions, amount, receiver, totalAmount,
-      transactionFee, amountToNaturalUnits, currencyUnit
+      transactionFee, amountToNaturalUnits, currencyUnit,
+      memo,
     } = this.props;
     const { wallets } = this.props.stores.substores[environment.API];
     const { sendMoneyRequest } = wallets;
@@ -50,6 +52,7 @@ export default class WalletSendConfirmationDialogContainer extends Component<Pro
         }}
         error={sendMoneyRequest.error}
         currencyUnit={currencyUnit}
+        memo={memo}
       />
     );
   }

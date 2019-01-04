@@ -6,6 +6,7 @@ const storageKeys = {
   TERMS_OF_USE_ACCEPTANCE: networkForLocalStorage + '-TERMS-OF-USE-ACCEPTANCE',
   THEME: networkForLocalStorage + '-THEME',
   DROPBOX_TOKEN: networkForLocalStorage + '-DROPBOX-TOKEN',
+  MEMOS: networkForLocalStorage + '-MEMOS',
 };
 
 /**
@@ -44,7 +45,6 @@ export default class LocalStorageApi {
   getTermsOfUseAcceptance = (): Promise<boolean> => new Promise((resolve, reject) => {
     try {
       const accepted = localStorage.getItem(storageKeys.TERMS_OF_USE_ACCEPTANCE);
-      console.log('test from ls', accepted);
       if (!accepted) return resolve(false);
       resolve(JSON.parse(accepted));
     } catch (error) {
@@ -71,7 +71,6 @@ export default class LocalStorageApi {
   getUserDropboxToken = (): Promise<void> => new Promise((resolve, reject) => {
     try {
       const token = localStorage.getItem(storageKeys.DROPBOX_TOKEN);
-      console.log('from ls', token);
       resolve(token);
     } catch (error) {
       return reject(error);
@@ -94,11 +93,45 @@ export default class LocalStorageApi {
     } catch (error) {
       return reject(error);
     }
-  })
+  });
+
+  getMemosFromStorage = (): Promise<void> => new Promise((resolve, reject) => {
+    try {
+      const memos = localStorage.getItem(storageKeys.MEMOS);
+      resolve(JSON.parse(memos));
+    } catch (error) {
+      return reject(error);
+    }
+  });
+
+  saveMemoToStorage = (memo): Promise<void> => new Promise((resolve, reject) => {
+    try {
+      const memos = localStorage.getItem(storageKeys.MEMOS);
+      console.log('what?', memos);
+      if (memos) {
+        localStorage.setItem(storageKeys.MEMOS, JSON.stringify(JSON.parse(memos).concat(memo)));
+      } else {
+        localStorage.setItem(storageKeys.MEMOS, JSON.stringify([memo]));
+      }
+      resolve();
+    } catch (error) {
+      return reject(error);
+    }
+  });
+
+  unsetMemosInStorage = (): Promise<void> => new Promise((resolve, reject) => {
+    try {
+      localStorage.removeItem(storageKeys.MEMOS);
+      resolve();
+    } catch (error) {
+      return reject(error);
+    }
+  });
 
   async reset() {
     await this.unsetUserLocale(); // TODO: remove after saving locale to API is restored
     await this.unsetTermsOfUseAcceptance();
+    await this.unsetMemosInStorage();
   }
 
 }

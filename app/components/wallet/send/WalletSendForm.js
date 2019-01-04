@@ -2,6 +2,7 @@
 import React, { Component } from 'react';
 import type { Node } from 'react';
 import { observer } from 'mobx-react';
+import { Link } from 'react-router';
 import classnames from 'classnames';
 import Button from 'react-polymorph/lib/components/Button';
 import SimpleButtonSkin from 'react-polymorph/lib/skins/simple/raw/ButtonSkin';
@@ -117,6 +118,16 @@ export const messages = defineMessages({
     defaultMessage: '!!!Add memo to your transaction',
     description: 'Placeholder for memo textarea',
   },
+  memoDropboxIsMissing: {
+    id: 'wallet.send.memo.dropboxIsMissing',
+    defaultMessage: '!!!In order to attach private memos to transactions you need to link Dropbox account.',
+    description: 'Info text to let user know about missing dropbox token',
+  },
+  memoLinkDropbox: {
+    id: 'wallet.send.memo.link',
+    defaultMessage: '!!!Link Dropbox',
+    description: 'Link to account settings text',
+  }
 });
 
 messages.fieldIsRequired = globalMessages.fieldIsRequired;
@@ -230,7 +241,7 @@ export default class WalletSendForm extends Component<Props, State> {
         }],
       },
       memo: {
-        label: this.context.intl.formatMessage(messages.memoLabel),
+        label: ' ',
         placeholder: this.context.intl.formatMessage(messages.memoPlaceholder),
         value: '',
       }
@@ -249,7 +260,7 @@ export default class WalletSendForm extends Component<Props, State> {
     const { form } = this;
     const memoField = form.$('memo');
     if (memoField.value.trim()) {
-      saveMemo();
+      // saveMemo();
     }
     this.setState({ isMemoOpen: !isMemoOpen });
   }
@@ -321,10 +332,17 @@ export default class WalletSendForm extends Component<Props, State> {
               {intl.formatMessage(messages.memoButton)}
             </button>
             {isMemoOpen && (
-              <TextArea
-                {...memoField.bind()}
-                skin={<TextAreaSkin />}
-              />
+              dropboxToken ? (
+                <TextArea
+                  {...memoField.bind()}
+                  skin={<TextAreaSkin />}
+                />
+              ) : (
+                <div className={styles.linkInfo}>
+                  <div>{intl.formatMessage(messages.memoDropboxIsMissing)}</div>
+                  <Link to="/settings/accounts" className={styles.link}>{intl.formatMessage(messages.memoLinkDropbox)}</Link>
+                </div>
+              )
             )}
           </div>
 
@@ -415,6 +433,7 @@ export default class WalletSendForm extends Component<Props, State> {
       const receiverFieldProps = receiverField.bind();
       const amountFieldProps = amountField.bind();
       const totalAmount = formattedAmountToBigNumber(amountFieldProps.value).add(transactionFee);
+      const memo = this.form.$('memo').value;
 
       const dialogProps = {
         amount: amountFieldProps.value,
@@ -422,7 +441,8 @@ export default class WalletSendForm extends Component<Props, State> {
         totalAmount: totalAmount.toFormat(currencyMaxFractionalDigits),
         transactionFee: transactionFee.toFormat(currencyMaxFractionalDigits),
         amountToNaturalUnits: formattedAmountToNaturalUnits,
-        currencyUnit
+        currencyUnit,
+        memo,
       };
 
       component = (

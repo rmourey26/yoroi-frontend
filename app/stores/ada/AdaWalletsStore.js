@@ -60,17 +60,23 @@ export default class AdaWalletsStore extends WalletStore {
     receiver: string,
     amount: string,
     password: ?string,
+    memo: string,
   }) => {
+    console.log('MEMO!', transactionDetails.memo);
     const wallet = this.active;
+    const { memo } = transactionDetails;
     if (!wallet) throw new Error('Active wallet required before sending.');
     const accountId = this.stores.substores.ada.addresses._getAccountIdByWalletId(wallet.id);
     if (!accountId) throw new Error('Active account required before sending.');
 
-    await this.sendMoneyRequest.execute({
+    /*await this.sendMoneyRequest.execute({
       ...transactionDetails,
       sender: accountId,
-    });
-
+    });*/
+    if (memo) {
+      await this.actions.accountsActions.saveMemo.trigger(memo);
+      await this.actions.accountsActions.saveMemoToLocal.trigger(memo);
+    }
     this.refreshWalletsData();
     this.actions.dialogs.closeActiveDialog.trigger();
     this.sendMoneyRequest.reset();

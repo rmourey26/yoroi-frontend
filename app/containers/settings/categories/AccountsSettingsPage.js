@@ -15,7 +15,10 @@ export default class AccountsSettingsPage extends Component<InjectedProps> {
     const { accounts } = this.props.stores;
     const { dropboxToken } = accounts;
     return (
-      <AccountsSettings token={dropboxToken} saveMemo={this.props.actions.accountsActions.saveMemo.trigger} />
+      <AccountsSettings
+        token={dropboxToken}
+        saveMemo={this.props.actions.accountsActions.saveMemo.trigger}
+      />
     );
   }
 
