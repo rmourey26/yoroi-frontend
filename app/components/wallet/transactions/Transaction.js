@@ -83,6 +83,11 @@ const messages = defineMessages({
     defaultMessage: '!!!Transaction amount',
     description: 'Transaction amount.',
   },
+  memo: {
+    id: 'wallet.transaction.memo',
+    defaultMessage: '!!!Transaction memo',
+    description: 'Transaction memo',
+  },
 });
 
 const assuranceLevelTranslations = defineMessages({
@@ -122,6 +127,7 @@ type Props = {
   assuranceLevel: string,
   isLastInList: boolean,
   formattedWalletAmount: Function,
+  memo: string,
 };
 
 type State = {
@@ -144,7 +150,7 @@ export default class Transaction extends Component<Props, State> {
 
   render() {
     const data = this.props.data;
-    const { isLastInList, state, assuranceLevel, formattedWalletAmount } = this.props;
+    const { isLastInList, state, assuranceLevel, formattedWalletAmount, memo } = this.props;
     const { isExpanded } = this.state;
     const { intl } = this.context;
     const isFailedTransaction = state === transactionStates.FAILED;
@@ -252,6 +258,8 @@ export default class Transaction extends Component<Props, State> {
 
               <h2>{intl.formatMessage(messages.transactionId)}</h2>
               <span>{data.id}</span>
+              <h2>{intl.formatMessage(messages.memo)}</h2>
+              <span>{memo}</span>
             </div>
           </div>
         </div>

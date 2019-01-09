@@ -11,6 +11,7 @@ export default class AccountsStore extends Store {
   /* eslint-disable max-len */
   @observable getUserDropboxTokenRequest: Request<string> = new Request(this.api.localStorage.getUserDropboxToken);
   @observable setUserDropboxTokenRequest: Request<string> = new Request(this.api.localStorage.setUserDropboxToken);
+  @observable getMemosFromLocalRequest: Request<string> = new Request(this.api.localStorage.getMemosFromStorage);
   @observable saveMemoToLocalRequest: Request<string> = new Request(this.api.localStorage.saveMemoToStorage);
   /* eslint-enable max-len */
 
@@ -19,6 +20,12 @@ export default class AccountsStore extends Store {
     this.actions.accountsActions.saveMemo.listen(this._saveMemo);
     this.actions.accountsActions.saveMemoToLocal.listen(this._saveMemoToLocal);
     this._getToken();
+    this._getMemosFromLocal();
+  }
+
+  @computed get localMemos() {
+    const { result } =  this.getMemosFromLocalRequest.execute();
+    return result;
   }
 
   _updateDropboxToken = async (token: string) => {
@@ -35,11 +42,15 @@ export default class AccountsStore extends Store {
     this.getUserDropboxTokenRequest.execute();
   }
 
-  _saveMemoToLocal = async (memo) => {
-    await this.saveMemoToLocalRequest.execute(memo);
+  _saveMemoToLocal = async (memo, id) => {
+    await this.saveMemoToLocalRequest.execute(memo, id);
   }
 
-  _saveMemo = async (memo = 'hey') => {
+  _getMemosFromLocal = () => {
+    this.getMemosFromLocalRequest.execute();
+  }
+
+  _saveMemo = async (memo = 'hey', id = '') => {
     try {
       const accessToken = await this.getUserDropboxTokenRequest.execute();
       const db = new Dropbox({ accessToken });
@@ -47,10 +58,11 @@ export default class AccountsStore extends Store {
       const { entries = [] } = data;
       const folder = find(entries, x => x.name === 'YoroiMemos') || await db.filesCreateFolderV2({ path: '/YoroiMemos' });
       const memos = await db.filesListFolder({ path: '/YoroiMemos' });
-      const num = memos.entries.length;
+      const num = id || memos.entries.length + 1;
       console.log('amount', memos);
       const saved = await db.filesUpload({ path: `/YoroiMemos/${num + 1}.txt`, contents: memo });
-      console.log('save memo result!', saved);
+      console.log('save memo result!', saved, num);
+      return num;
     } catch (err) {
       console.log('err', err);
     }

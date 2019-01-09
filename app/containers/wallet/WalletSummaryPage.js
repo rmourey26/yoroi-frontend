@@ -46,6 +46,8 @@ export default class WalletSummaryPage extends Component<Props> {
       recentTransactionsRequest,
       unconfirmedAmount,
     } = transactions;
+    const { accounts } = this.props.stores;
+    const { localMemos = [] } = accounts;
     const wallet = wallets.active;
     let walletTransactions = null;
     // Guard against potential null values
@@ -67,6 +69,7 @@ export default class WalletSummaryPage extends Component<Props> {
             assuranceMode={wallet.assuranceMode}
             walletId={wallet.id}
             formattedWalletAmount={formattedWalletAmount}
+            memos={localMemos}
           />
         );
       } else if (!hasAny) {

@@ -33,6 +33,10 @@ const messages = defineMessages({
 
 const dateFormat = 'YYYY-MM-DD';
 
+type Memo = {
+  memo: string,
+}
+
 type Props = {
   transactions: Array<WalletTransaction>,
   isLoadingTransactions: boolean,
@@ -41,6 +45,7 @@ type Props = {
   walletId: string,
   formattedWalletAmount: Function,
   onLoadMore: Function,
+  memos: Array<Memo>,
 };
 
 @observer
@@ -110,7 +115,8 @@ export default class WalletTransactionsList extends Component<Props> {
       assuranceMode,
       walletId,
       formattedWalletAmount,
-      onLoadMore
+      onLoadMore,
+      memos,
     } = this.props;
 
     const buttonClasses = classnames([
@@ -123,7 +129,7 @@ export default class WalletTransactionsList extends Component<Props> {
     const loadingSpinner = isLoadingTransactions ? (
       <LoadingSpinner ref={(component) => { this.loadingSpinner = component; }} />
     ) : null;
-
+    console.log('memos', memos);
     return (
       <div className={styles.component}>
         {transactionsGroups.map(group => (
@@ -138,6 +144,7 @@ export default class WalletTransactionsList extends Component<Props> {
                     state={transaction.state}
                     assuranceLevel={transaction.getAssuranceLevelForMode(assuranceMode)}
                     formattedWalletAmount={formattedWalletAmount}
+                    memo={memos[transactionIndex] ? memos[transactionIndex].memo : ''}
                   />
                 </div>
               ))}

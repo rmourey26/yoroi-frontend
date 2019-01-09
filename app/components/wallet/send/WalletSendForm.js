@@ -21,6 +21,7 @@ import styles from './WalletSendForm.scss';
 import globalMessages from '../../../i18n/global-messages';
 import WalletSendConfirmationDialog from './WalletSendConfirmationDialog';
 import TrezorSendConfirmationDialog from './trezor/TrezorSendConfirmationDialog';
+import WalletCloseMemoDialog from './WalletCloseMemoDialog';
 import {
   formattedAmountToBigNumber,
   formattedAmountToNaturalUnits
@@ -259,10 +260,20 @@ export default class WalletSendForm extends Component<Props, State> {
     const { isMemoOpen } = this.state;
     const { form } = this;
     const memoField = form.$('memo');
-    if (memoField.value.trim()) {
-      // saveMemo();
-    }
-    this.setState({ isMemoOpen: !isMemoOpen });
+    if (memoField.value.trim() && isMemoOpen) {
+      this.handleRemoveMemoDialog();
+    } else this.setState({ isMemoOpen: !isMemoOpen });
+  }
+
+  handleRemoveMemoDialog = () => {
+    const { isMemoRemoveConfirmationOpen } = this.state;
+    this.setState({ isMemoRemoveConfirmationOpen: !isMemoRemoveConfirmationOpen });
+  }
+
+  handleRemoveMemoSubmit = () => {
+    const { form } = this;
+    form.$('memo').reset();
+    this.setState({ isMemoRemoveConfirmationOpen: false, isMemoOpen: false });
   }
 
   render() {
@@ -280,6 +291,7 @@ export default class WalletSendForm extends Component<Props, State> {
       transactionFee,
       transactionFeeError,
       isMemoOpen,
+      isMemoRemoveConfirmationOpen,
     } = this.state;
 
     const amountField = form.$('amount');
@@ -349,7 +361,13 @@ export default class WalletSendForm extends Component<Props, State> {
           {this._makeInvokeConfirmationButton()}
 
         </BorderedBox>
-
+        {isMemoRemoveConfirmationOpen && (
+          <WalletCloseMemoDialog
+            close={this.handleRemoveMemoDialog}
+            submit={this.handleRemoveMemoSubmit}
+            format={intl.formatMessage}
+          />
+        )}
         {this._makeConfirmationDialogComponent()}
 
       </div>
