@@ -14,11 +14,6 @@ export default defineMessages({
   },
   invalidWalletName: {
     id: 'global.errors.invalidWalletName',
-    defaultMessage: '!!!Wallet name requires at least 3 and at most 40 letters.',
-    description: 'Error message shown when invalid wallet name was entered in create wallet dialog.'
-  },
-  invalidHardwareWalletName: {
-    id: 'global.errors.invalidHardwareWalletName',
     defaultMessage: '!!!Wallet name requires at least 1 and at most 40 letters.',
     description: 'Error message shown when invalid wallet name was entered in create wallet dialog.'
   },
@@ -171,6 +166,21 @@ export default defineMessages({
     id: 'wallet.trezor.error.103',
     defaultMessage: '!!!Cancelled. Please retry.',
     description: '<Cancelled. Please retry.>'
+  },
+  walletCreatedNotificationMessage: {
+    id: 'wallet.summary.page.walletCreatedNotificationMessage',
+    defaultMessage: '!!!You have successfully created a new Wallet',
+    description: 'Notification Message for successful wallet creation.',
+  },
+  walletRestoredNotificationMessage: {
+    id: 'wallet.summary.page.walletRestoredNotificationMessage',
+    defaultMessage: '!!!You have successfully restored your Wallet',
+    description: 'Notification Message for successful wallet restoration.',
+  },
+  trezorTWalletIntegratedNotificationMessage: {
+    id: 'wallet.summary.page.trezorTWalletIntegratedNotificationMessage',
+    defaultMessage: '!!!You have successfully integrated with your Trezor Model T device',
+    description: 'Notification Message for successful integration with Trezor Model T device.',
   },
 });
 

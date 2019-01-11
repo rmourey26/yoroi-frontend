@@ -16,5 +16,5 @@ export type TransferTx = {
   fee: BigNumber,
   cborEncodedTx: Array<number>,
   senders: Array<string>,
-  receiver: string
+  receiver: string,
 }

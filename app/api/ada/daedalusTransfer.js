@@ -64,6 +64,7 @@ export async function generateTransferTx(payload: {
   addressesWithFunds: Array<CryptoDaedalusAddressRestored>
 }): Promise<TransferTx> {
   try {
+
     const { secretWords, addressesWithFunds } = payload;
 
     // fetch data to make transaction
@@ -73,7 +74,8 @@ export async function generateTransferTx(payload: {
       throw new NoInputsError();
     }
     const recoveredBalance = await getBalance(senders);
-    const inputs = _getInputs(senderUtxos, addressesWithFunds);
+    const inputWrappers: Array<DaedalusInputWrapper> = _getInputs(senderUtxos, addressesWithFunds);
+    const inputs = inputWrappers.map(w => w.input);
 
     // pick which address to send transfer to
     const output = await _getReceiverAddress();
@@ -88,7 +90,7 @@ export async function generateTransferTx(payload: {
       fee: new BigNumber(tx.fee).dividedBy(LOVELACES_PER_ADA),
       cborEncodedTx: tx.cbor_encoded_tx,
       senders,
-      receiver: output
+      receiver: output,
     };
   } catch (error) {
     Logger.error(`daedalusTransfer::generateTransferTx ${stringifyError(error)}`);
@@ -107,23 +109,29 @@ async function _getReceiverAddress(): Promise<string> {
   return addresses[0].cadId;
 }
 
+declare type DaedalusInputWrapper = {
+  input: TxDaedalusInput,
+  address: string
+}
+
 /** Create V1 addressing scheme inputs from Daedalus restoration info */
 function _getInputs(
   utxos: Array<UTXO>,
   addressesWithFunds: Array<CryptoDaedalusAddressRestored>
-): Array<TxDaedalusInput> {
+): Array<DaedalusInputWrapper> {
   const addressingByAddress = {};
   addressesWithFunds.forEach(a => {
     addressingByAddress[a.address] = a.addressing;
   });
-  return utxos.map(utxo => (
-    {
+  return utxos.map(utxo => ({
+    input: {
       ptr: {
         index: utxo.tx_index,
         id: utxo.tx_hash
       },
       value: utxo.amount,
       addressing: addressingByAddress[utxo.receiver]
-    }
-  ));
+    },
+    address: utxo.receiver
+  }));
 }
