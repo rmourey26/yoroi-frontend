@@ -104,10 +104,9 @@ export default class LocalStorageApi {
     }
   });
 
-  saveMemoToStorage = (memo, id): Promise<void> => new Promise((resolve, reject) => {
+  saveMemoToStorage = (data): Promise<void> => new Promise((resolve, reject) => {
     try {
       const memos = localStorage.getItem(storageKeys.MEMOS);
-      const data = { memo, id };
       if (memos) {
         localStorage.setItem(storageKeys.MEMOS, JSON.stringify(JSON.parse(memos).concat(data)));
       } else {
@@ -118,6 +117,15 @@ export default class LocalStorageApi {
       return reject(error);
     }
   });
+
+  saveAllMemosToStorage = (arr): Promise<void> => new Promise((resolve, reject) => {
+    try {
+      localStorage.setItem(storageKeys.MEMOS, JSON.stringify(arr));
+      resolve();
+    } catch (error) {
+      return reject(error);
+    }
+  })
 
   unsetMemosInStorage = (): Promise<void> => new Promise((resolve, reject) => {
     try {

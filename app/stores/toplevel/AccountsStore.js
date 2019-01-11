@@ -28,41 +28,83 @@ export default class AccountsStore extends Store {
     return result;
   }
 
-  _updateDropboxToken = async (token: string) => {
-    await this.setUserDropboxTokenRequest.execute(token);
-    await this.getUserDropboxTokenRequest.execute(); // eagerly cache
-  };
-
   @computed get dropboxToken(): string {
     const { result } = this.getUserDropboxTokenRequest.execute();
     return result;
   }
 
-  _getToken = () => {
-    this.getUserDropboxTokenRequest.execute();
+  _checkDropboxFolder = async (): Promise<{ db: any, folderExists: boolean }> => {
+    try {
+      const accessToken = await this.getUserDropboxTokenRequest.execute();
+      const db = new Dropbox({ accessToken });
+      const data = await db.filesListFolder({ path: '', fetch: axios });
+      const { entries = [] } = data;
+      const folder = find(entries, x => x.name === 'YoroiMemos');
+      const folderExists = folder !== undefined;
+      return { db, folderExists };
+    } catch (err) {
+      console.log('sync err', err);
+    }
   }
 
-  _saveMemoToLocal = async (memo, id) => {
-    await this.saveMemoToLocalRequest.execute(memo, id);
+  _readBlob = (blob: any): Promise<any> => {
+    const reader = new FileReader();
+    return new Promise((resolve, reject): string => {
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => {
+        reader.abort();
+        reject();
+      };
+      reader.readAsText(blob);
+    });
+  }
+
+  _syncMemos = async () => {
+    try {
+      const { db, folderExists } = await this._checkDropboxFolder();
+      if (folderExists) {
+        const { entries = [] } = await db.filesListFolder({ path: '/YoroiMemos', fetch: axios });
+
+        const memos = await Promise.all(
+          entries.map(async (x) => {
+            const { name, path_display: path } = x;
+            const { fileBlob } = await db.filesDownload({ path });
+            const memoText = await this._readBlob(fileBlob);
+            const memoId = name.slice(0, name.length - 4);
+            return { memoText, memoId };
+          })
+        );
+        console.log('entries', memos);
+      }
+    } catch (err) {
+      console.log('sync err', err);
+    }
+  }
+
+  _updateDropboxToken = async (token: string) => {
+    await this.setUserDropboxTokenRequest.execute(token);
+    await this.getUserDropboxTokenRequest.execute(); // eagerly cache
+  };
+
+  _getToken = () => {
+    this.getUserDropboxTokenRequest.execute();
+    this._syncMemos();
+  }
+
+  _saveMemoToLocal = async (memo) => {
+    await this.saveMemoToLocalRequest.execute(memo);
   }
 
   _getMemosFromLocal = () => {
     this.getMemosFromLocalRequest.execute();
   }
 
-  _saveMemo = async (memo = 'hey', id = '') => {
+  _saveMemo = async ({ memoId = '', memoText = '' }: {memoId: string, memoText: string }): Promise<any> => {
     try {
-      const accessToken = await this.getUserDropboxTokenRequest.execute();
-      const db = new Dropbox({ accessToken });
-      const data = await db.filesListFolder({ path: '', fetch: axios });
-      const { entries = [] } = data;
-      const folder = find(entries, x => x.name === 'YoroiMemos') || await db.filesCreateFolderV2({ path: '/YoroiMemos' });
-      const memos = await db.filesListFolder({ path: '/YoroiMemos' });
-      const num = id || memos.entries.length + 1;
-      console.log('amount', memos);
-      const saved = await db.filesUpload({ path: `/YoroiMemos/${num + 1}.txt`, contents: memo });
-      console.log('save memo result!', saved, num);
-      return num;
+      const { db, folderExists } = await this._checkDropboxFolder();
+      if (!folderExists) await db.filesCreateFolderV2({ path: '/YoroiMemos' });
+      const saved = await db.filesUpload({ path: `/YoroiMemos/${memoId}.txt`, contents: memoText });
+      console.log('save memo result!', saved);
     } catch (err) {
       console.log('err', err);
     }

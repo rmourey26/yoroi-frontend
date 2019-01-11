@@ -340,7 +340,7 @@ export default class WalletSendForm extends Component<Props, State> {
           </div>
 
           <div className={styles.addMemoArea}>
-            <button className={styles.addMemoButton} onClick={this.handleToggleMemo} type="button">
+            <button className={`${styles.addMemoButton}${isMemoOpen ? ' ' + styles.open : ''}`} onClick={this.handleToggleMemo} type="button">
               {intl.formatMessage(messages.memoButton)}
             </button>
             {isMemoOpen && (

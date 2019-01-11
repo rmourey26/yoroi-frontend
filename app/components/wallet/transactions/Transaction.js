@@ -258,8 +258,12 @@ export default class Transaction extends Component<Props, State> {
 
               <h2>{intl.formatMessage(messages.transactionId)}</h2>
               <span>{data.id}</span>
-              <h2>{intl.formatMessage(messages.memo)}</h2>
-              <span>{memo}</span>
+              {memo && (
+                <div className={styles.row}>
+                  <h2>{intl.formatMessage(messages.memo)}</h2>
+                  <span>{memo}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { defineMessages, intlShape } from 'react-intl';
 
 import Dialog from '../../widgets/Dialog';
 import DialogCloseButton from '../../widgets/DialogCloseButton';
+import styles from './WalletSendConfirmationDialog.scss';
 
 const messages = defineMessages({
   remove: {
@@ -34,6 +35,7 @@ export default class WalletCloseMemoDialog extends Component {
         title="Confirm memo removal"
         closeButton={<DialogCloseButton />}
         actions={actions}
+        className={styles.dialog}
       >
         <div>{format(messages.remove)}</div>
       </Dialog>

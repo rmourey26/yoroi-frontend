@@ -77,6 +77,14 @@
     border-bottom: 4px solid transparent;
     border-left: 4px solid var(--theme-input-label-color);
   }
+  &.open {
+    &:after {
+      top: 5px;
+      border-top: 4px solid var(--theme-input-label-color);
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+    }
+  }
 }
 .linkInfo {
   font-family: var(--font-light), sans-serif;

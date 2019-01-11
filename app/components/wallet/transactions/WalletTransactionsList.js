@@ -34,7 +34,8 @@ const messages = defineMessages({
 const dateFormat = 'YYYY-MM-DD';
 
 type Memo = {
-  memo: string,
+  memoId: string,
+  memoText: string,
 }
 
 type Props = {
@@ -129,25 +130,28 @@ export default class WalletTransactionsList extends Component<Props> {
     const loadingSpinner = isLoadingTransactions ? (
       <LoadingSpinner ref={(component) => { this.loadingSpinner = component; }} />
     ) : null;
-    console.log('memos', memos);
     return (
       <div className={styles.component}>
         {transactionsGroups.map(group => (
           <div className={styles.group} key={walletId + '-' + this.getTransactionKey(group.transactions)}>
             <div className={styles.groupDate}>{this.localizedDate(group.date)}</div>
             <div className={styles.list}>
-              {group.transactions.map((transaction, transactionIndex) => (
-                <div key={`${walletId}-${transaction.id}-${transaction.type}`}>
-                  <Transaction
-                    data={transaction}
-                    isLastInList={transactionIndex === group.transactions.length - 1}
-                    state={transaction.state}
-                    assuranceLevel={transaction.getAssuranceLevelForMode(assuranceMode)}
-                    formattedWalletAmount={formattedWalletAmount}
-                    memo={memos[transactionIndex] ? memos[transactionIndex].memo : ''}
-                  />
-                </div>
-              ))}
+              {group.transactions.map((transaction, transactionIndex) => {
+                const current = memos.find(x => x.memoId === transaction.id);
+                const memoText = current ? current.memoText : '';
+                return (
+                  <div key={`${walletId}-${transaction.id}-${transaction.type}`}>
+                    <Transaction
+                      data={transaction}
+                      isLastInList={transactionIndex === group.transactions.length - 1}
+                      state={transaction.state}
+                      assuranceLevel={transaction.getAssuranceLevelForMode(assuranceMode)}
+                      formattedWalletAmount={formattedWalletAmount}
+                      memo={memoText}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
         ))}
