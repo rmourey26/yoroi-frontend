@@ -42,6 +42,7 @@ type Props = {
   error: ?LocalizableError,
   onSubmit: Function,
   onCancel: Function,
+  memo?: string,
 };
 
 @observer
@@ -147,10 +148,11 @@ export default class TrezorSendConfirmationDialog extends Component<Props> {
   }
 
   submit = () => {
-    const { receiver, amount, amountToNaturalUnits } = this.props;
+    const { receiver, amount, amountToNaturalUnits, memo } = this.props;
     const transactionData = {
       receiver,
       amount: amountToNaturalUnits(amount),
+      // memo,
     };
     this.props.onSubmit(transactionData);
   }

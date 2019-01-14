@@ -98,7 +98,9 @@ export default class LocalStorageApi {
   getMemosFromStorage = (): Promise<void> => new Promise((resolve, reject) => {
     try {
       const memos = localStorage.getItem(storageKeys.MEMOS);
-      resolve(JSON.parse(memos));
+      if (memos !== 'undefined' && memos !== 'null') {
+        resolve(JSON.parse(memos));
+      } else resolve();
     } catch (error) {
       return reject(error);
     }

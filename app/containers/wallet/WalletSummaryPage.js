@@ -57,7 +57,6 @@ export default class WalletSummaryPage extends Component<Props> {
       unconfirmedAmount,
     } = transactions;
     const { accounts } = this.props.stores;
-    console.log('props', this.props);
     const { localMemos } = accounts;
     const wallet = wallets.active;
     let walletTransactions = null;

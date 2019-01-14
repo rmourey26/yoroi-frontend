@@ -66,7 +66,6 @@ export default class AdaWalletsStore extends WalletStore {
     password: ?string,
     memo: string,
   }) => {
-    console.log('MEMO!', transactionDetails.memo);
     const wallet = this.active;
     const { memo } = transactionDetails;
     if (!wallet) throw new Error('Active wallet required before sending.');

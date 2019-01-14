@@ -92,6 +92,7 @@ export default class WalletSendPage extends Component<Props> {
         error={trezorSendStore.error}
         onSubmit={trezorSendAction.sendUsingTrezor.trigger}
         onCancel={trezorSendAction.cancel.trigger}
+        memo={dialogProps.memo}
       />);
   };
 }

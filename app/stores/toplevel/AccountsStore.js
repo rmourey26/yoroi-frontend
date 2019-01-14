@@ -13,6 +13,7 @@ export default class AccountsStore extends Store {
   @observable setUserDropboxTokenRequest: Request<string> = new Request(this.api.localStorage.setUserDropboxToken);
   @observable getMemosFromLocalRequest: Request<string> = new Request(this.api.localStorage.getMemosFromStorage);
   @observable saveMemoToLocalRequest: Request<string> = new Request(this.api.localStorage.saveMemoToStorage);
+  @observable saveAllMemosRequest: Request<any> = new Request(this.api.localStorage.saveAllMemosToStorage);
   /* eslint-enable max-len */
 
   setup() {
@@ -74,7 +75,8 @@ export default class AccountsStore extends Store {
             return { memoText, memoId };
           })
         );
-        console.log('entries', memos);
+        await this.saveAllMemosRequest.execute(memos);
+        return memos;
       }
     } catch (err) {
       console.log('sync err', err);
@@ -84,11 +86,11 @@ export default class AccountsStore extends Store {
   _updateDropboxToken = async (token: string) => {
     await this.setUserDropboxTokenRequest.execute(token);
     await this.getUserDropboxTokenRequest.execute(); // eagerly cache
+    await this._syncMemos();
   };
 
   _getToken = () => {
     this.getUserDropboxTokenRequest.execute();
-    this._syncMemos();
   }
 
   _saveMemoToLocal = async (memo) => {
@@ -99,7 +101,7 @@ export default class AccountsStore extends Store {
     this.getMemosFromLocalRequest.execute();
   }
 
-  _saveMemo = async ({ memoId = '', memoText = '' }: {memoId: string, memoText: string }): Promise<any> => {
+  _saveMemo = async ({ memoId = '', memoText = '' }: { memoId: string, memoText: string }): Promise<any> => {
     try {
       const { db, folderExists } = await this._checkDropboxFolder();
       if (!folderExists) await db.filesCreateFolderV2({ path: '/YoroiMemos' });

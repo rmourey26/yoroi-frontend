@@ -58,6 +58,7 @@ export default class TrezorSendStore extends Store {
 
   /** Generates a payload with Trezor format and tries Send ADA using Trezor signing */
   _sendUsingTrezor = async (params: CreateTrezorSignTxDataRequest): Promise<void> => {
+    console.log('params', params);
     try {
 
       if (this.isActionProcessing) {
@@ -95,7 +96,8 @@ export default class TrezorSendStore extends Store {
         throw new Error(trezorResp.payload.error);
       }
 
-      await this._sendTrezorSignedTx(trezorSignTxDataResp, trezorResp);
+      const foo = await this._sendTrezorSignedTx(trezorSignTxDataResp, trezorResp);
+      console.log('foo', foo);
 
     } catch (error) {
       Logger.error('TrezorSendStore::_sendUsingTrezor error: ' + stringifyError(error));
