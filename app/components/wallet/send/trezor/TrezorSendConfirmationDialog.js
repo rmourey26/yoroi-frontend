@@ -152,7 +152,7 @@ export default class TrezorSendConfirmationDialog extends Component<Props> {
     const transactionData = {
       receiver,
       amount: amountToNaturalUnits(amount),
-      // memo,
+      memo,
     };
     this.props.onSubmit(transactionData);
   }

@@ -102,7 +102,8 @@ export type SendTrezorSignedTxRequest = {
 };
 export type CreateTrezorSignTxDataRequest = {
   receiver: string,
-  amount: string
+  amount: string,
+  memo?: string,
 };
 export type CreateTrezorSignTxDataResponse = {
   trezorSignTxPayload: TrezorSignTxPayload,

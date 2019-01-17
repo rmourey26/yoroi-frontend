@@ -16,6 +16,7 @@
     "page": "background.html"
   },
   "permissions": [
+    "*",
     "identity",
     "tabs",
     "storage",

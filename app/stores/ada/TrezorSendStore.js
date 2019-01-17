@@ -58,6 +58,7 @@ export default class TrezorSendStore extends Store {
 
   /** Generates a payload with Trezor format and tries Send ADA using Trezor signing */
   _sendUsingTrezor = async (params: CreateTrezorSignTxDataRequest): Promise<void> => {
+    const { memo = '' } = params;
     console.log('params', params);
     try {
 
@@ -96,8 +97,7 @@ export default class TrezorSendStore extends Store {
         throw new Error(trezorResp.payload.error);
       }
 
-      const foo = await this._sendTrezorSignedTx(trezorSignTxDataResp, trezorResp);
-      console.log('foo', foo);
+      await this._sendTrezorSignedTx(trezorSignTxDataResp, trezorResp, memo);
 
     } catch (error) {
       Logger.error('TrezorSendStore::_sendUsingTrezor error: ' + stringifyError(error));
@@ -110,7 +110,8 @@ export default class TrezorSendStore extends Store {
   };
 
   _sendTrezorSignedTx = async (trezorSignTxDataResp: CreateTrezorSignTxDataResponse,
-    trezorResp: any): Promise<void> => {
+    trezorResp: any,
+    memo: string): Promise<void> => {
     // TODO: [TREZOR] fix type if possible
     const payload: any = trezorResp.payload;
     this.sendTrezorSignedTxRequest.reset();
@@ -119,9 +120,16 @@ export default class TrezorSendStore extends Store {
       changeAdaAddr: trezorSignTxDataResp.changeAddress
     };
     // TODO: [TREZOR] add error check
-    await this.sendTrezorSignedTxRequest.execute(reqParams).promise;
+    const { txId } = await this.sendTrezorSignedTxRequest.execute(reqParams).promise;
+    // This one returns a transaction ID.
+    console.log('bar', txId, memo);
     this.actions.dialogs.closeActiveDialog.trigger();
     const { wallets } = this.stores.substores[environment.API];
+    if (memo && txId) {
+      const data = { memoText: memo, memoId: txId };
+      await this.actions.accountsActions.saveMemo.trigger(data);
+      await this.actions.accountsActions.saveMemoToLocal.trigger(data);
+    }
     wallets.refreshWalletsData();
     const activeWallet = wallets.active;
     if (activeWallet) {
