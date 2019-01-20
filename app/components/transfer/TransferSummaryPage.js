@@ -6,7 +6,9 @@ import Button from 'react-polymorph/lib/components/Button';
 import SimpleButtonSkin from 'react-polymorph/lib/skins/simple/raw/ButtonSkin';
 import { defineMessages, intlShape } from 'react-intl';
 import BorderedBox from '../widgets/BorderedBox';
+import ReactToolboxMobxForm from '../../utils/ReactToolboxMobxForm';
 import styles from './TransferSummaryPage.scss';
+import MemoArea from '../wallet/send/MemoArea';
 import type { TransferTx } from '../../types/TransferTypes';
 import LocalizableError from '../../i18n/LocalizableError';
 
@@ -45,7 +47,12 @@ const messages = defineMessages({
     id: 'transfer.summary.transferButton.label',
     defaultMessage: '!!!Transfer Funds',
     description: 'Do tansfer button text',
-  }
+  },
+  memoPlaceholder: {
+    id: 'wallet.send.memo.placeholder',
+    defaultMessage: '!!!Add memo to your transaction',
+    description: 'Placeholder for memo textarea',
+  },
 });
 
 type Props = {
@@ -55,7 +62,8 @@ type Props = {
   isSubmitting: boolean,
   onCancel: Function,
   error: ?LocalizableError,
-  addressFromSubLabel: string
+  addressFromSubLabel: string,
+  dropboxToken: string,
 };
 
 /** Show user what the transfer would do to get final confirmation */
@@ -66,9 +74,27 @@ export default class TransferSummaryPage extends Component<Props> {
     intl: intlShape.isRequired
   };
 
+  form = new ReactToolboxMobxForm({
+    fields: {
+      memo: {
+        label: ' ',
+        placeholder: this.context.intl.formatMessage(messages.memoPlaceholder),
+        value: '',
+      }
+    },
+  });
+
   render() {
     const { intl } = this.context;
-    const { transferTx, isSubmitting, error, addressFromSubLabel } = this.props;
+    const {
+      transferTx,
+      isSubmitting,
+      error,
+      addressFromSubLabel,
+      dropboxToken,
+    } = this.props;
+    const { form } = this;
+    const memoValue = form.$('memo').value;
 
     const receiver = transferTx.receiver;
     const recoveredBalance = this.props.formattedWalletAmount(transferTx.recoveredBalance);
@@ -88,13 +114,12 @@ export default class TransferSummaryPage extends Component<Props> {
       'flat',
       styles.button,
     ]);
-
     return (
       <div className={styles.component}>
         <BorderedBox>
 
           <div className={styles.body}>
-
+            <div> hello world</div>
             <div className={styles.addressLabelWrapper}>
               <div className={styles.addressLabel}>
                 {intl.formatMessage(messages.addressFromLabel)}
@@ -160,6 +185,8 @@ export default class TransferSummaryPage extends Component<Props> {
               }
             </div>
 
+            <MemoArea dropboxToken={dropboxToken} intl={intl} form={this.form} />
+
             <div className={styles.buttonsWrapper}>
               <Button
                 className={cancelButtonClasses}
@@ -172,7 +199,7 @@ export default class TransferSummaryPage extends Component<Props> {
               <Button
                 className={nextButtonClasses}
                 label={intl.formatMessage(messages.transferButtonLabel)}
-                onClick={this.props.onSubmit}
+                onClick={this.props.onSubmit(memoValue)}
                 disabled={isSubmitting}
                 skin={<SimpleButtonSkin />}
               />

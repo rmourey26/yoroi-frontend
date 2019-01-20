@@ -121,8 +121,7 @@ export default class TrezorSendStore extends Store {
     };
     // TODO: [TREZOR] add error check
     const { txId } = await this.sendTrezorSignedTxRequest.execute(reqParams).promise;
-    // This one returns a transaction ID.
-    console.log('bar', txId, memo);
+
     this.actions.dialogs.closeActiveDialog.trigger();
     const { wallets } = this.stores.substores[environment.API];
     if (memo && txId) {

@@ -167,16 +167,22 @@ export default class DaedalusTransferStore extends Store {
 
   /** Broadcast the transfer transaction if one exists and proceed to continuation */
   _transferFunds = async (payload: {
-    next: Function
+    next: Function,
+    memo: string,
   }): Promise<void> => {
     try {
-      const { next } = payload;
+      const { next, memo } = payload;
       if (!this.transferTx) {
         throw new NoTransferTxError();
       }
-      await this.transferFundsRequest.execute({
+      const { txId } = await this.transferFundsRequest.execute({
         cborEncodedTx: this.transferTx.cborEncodedTx
       });
+      if (memo && txId) {
+        const data = { memoText: memo, memoId: txId };
+        await this.actions.accountsActions.saveMemo.trigger(data);
+        await this.actions.accountsActions.saveMemoToLocal.trigger(data);
+      }
       // TBD: why do we need a continuation instead of just pustting the code here directly?
       next();
       this._reset();

@@ -59,9 +59,9 @@ export default class DaedalusTransferPage extends Component<InjectedProps> {
   };
 
   /** Broadcast the transfer transaction if one exists and return to wallet page */
-  tranferFunds = () => {
+  tranferFunds = (memo = '') => () => {
     // broadcast transfer transaction then call continuation
-    this._getDaedalusTransferActions().transferFunds.trigger({
+    this._getDaedalusTransferActions().transferFunds.trigger({ 
       next: () => {
         const walletsStore = this._getWalletsStore();
         walletsStore.refreshWalletsData();
@@ -71,7 +71,8 @@ export default class DaedalusTransferPage extends Component<InjectedProps> {
             route: newRoute
           });
         }
-      }
+      },
+      memo,
     });
   }
 
@@ -85,7 +86,7 @@ export default class DaedalusTransferPage extends Component<InjectedProps> {
 
   render() {
     const { stores, actions } = this.props;
-    const { topbar } = stores;
+    const { topbar, accounts } = stores;
     const topbarTitle = (
       <StaticTopbarTitle title={this.context.intl.formatMessage(messages.title)} />
     );
@@ -145,6 +146,7 @@ export default class DaedalusTransferPage extends Component<InjectedProps> {
               isSubmitting={daedalusTransfer.transferFundsRequest.isExecuting}
               onCancel={this.cancelTransferFunds}
               error={daedalusTransfer.error}
+              dropboxToken={accounts.dropboxToken || ''}
             />
           </MainLayout>
         );

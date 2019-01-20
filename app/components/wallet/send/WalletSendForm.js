@@ -2,15 +2,12 @@
 import React, { Component } from 'react';
 import type { Node } from 'react';
 import { observer } from 'mobx-react';
-import { Link } from 'react-router';
 import classnames from 'classnames';
 import Button from 'react-polymorph/lib/components/Button';
 import SimpleButtonSkin from 'react-polymorph/lib/skins/simple/raw/ButtonSkin';
 import Input from 'react-polymorph/lib/components/Input';
 import NumericInput from 'react-polymorph/lib/components/NumericInput';
-import TextArea from 'react-polymorph/lib/components/TextArea';
 import SimpleInputSkin from 'react-polymorph/lib/skins/simple/raw/InputSkin';
-import TextAreaSkin from 'react-polymorph/lib/skins/simple/raw/TextAreaSkin';
 import { defineMessages, intlShape } from 'react-intl';
 import BigNumber from 'bignumber.js';
 import SvgInline from 'react-svg-inline';
@@ -21,7 +18,7 @@ import styles from './WalletSendForm.scss';
 import globalMessages from '../../../i18n/global-messages';
 import WalletSendConfirmationDialog from './WalletSendConfirmationDialog';
 import TrezorSendConfirmationDialog from './trezor/TrezorSendConfirmationDialog';
-import WalletCloseMemoDialog from './WalletCloseMemoDialog';
+import MemoArea from './MemoArea';
 import {
   formattedAmountToBigNumber,
   formattedAmountToNaturalUnits
@@ -104,31 +101,11 @@ export const messages = defineMessages({
     defaultMessage: '!!!Cannot send a transaction while there is a pending one',
     description: '"Cannot send a transaction while there is a pending one" error message',
   },
-  memoButton: {
-    id: 'wallet.send.memo.button',
-    defaultMessage: '!!!Add memo',
-    description: 'Memo button text',
-  },
-  memoLabel: {
-    id: 'wallet.send.memo.label',
-    defaultMessage: '!!!Memo',
-    description: 'Label for memo textarea',
-  },
   memoPlaceholder: {
     id: 'wallet.send.memo.placeholder',
     defaultMessage: '!!!Add memo to your transaction',
     description: 'Placeholder for memo textarea',
   },
-  memoDropboxIsMissing: {
-    id: 'wallet.send.memo.dropboxIsMissing',
-    defaultMessage: '!!!In order to attach private memos to transactions you need to link Dropbox account.',
-    description: 'Info text to let user know about missing dropbox token',
-  },
-  memoLinkDropbox: {
-    id: 'wallet.send.memo.link',
-    defaultMessage: '!!!Link Dropbox',
-    description: 'Link to account settings text',
-  }
 });
 
 messages.fieldIsRequired = globalMessages.fieldIsRequired;
@@ -154,8 +131,6 @@ type State = {
   isTransactionFeeCalculated: boolean,
   transactionFee: BigNumber,
   transactionFeeError: ?string,
-  isMemoOpen: boolean,
-  isMemoRemoveConfirmationOpen: boolean,
 };
 
 @observer
@@ -169,8 +144,6 @@ export default class WalletSendForm extends Component<Props, State> {
     isTransactionFeeCalculated: false,
     transactionFee: new BigNumber(0),
     transactionFeeError: null,
-    isMemoOpen: false,
-    isMemoRemoveConfirmationOpen: false,
   };
 
   /** We need to track form submitting state in order to avoid calling
@@ -241,11 +214,6 @@ export default class WalletSendForm extends Component<Props, State> {
           return [isValid, this.context.intl.formatMessage(messages.invalidAmount)];
         }],
       },
-      memo: {
-        label: ' ',
-        placeholder: this.context.intl.formatMessage(messages.memoPlaceholder),
-        value: '',
-      }
     },
   }, {
     options: {
@@ -255,26 +223,15 @@ export default class WalletSendForm extends Component<Props, State> {
     },
   });
 
-  handleToggleMemo = () => {
-    const { saveMemo } = this.props;
-    const { isMemoOpen } = this.state;
-    const { form } = this;
-    const memoField = form.$('memo');
-    if (memoField.value.trim() && isMemoOpen) {
-      this.handleRemoveMemoDialog();
-    } else this.setState({ isMemoOpen: !isMemoOpen });
-  }
-
-  handleRemoveMemoDialog = () => {
-    const { isMemoRemoveConfirmationOpen } = this.state;
-    this.setState({ isMemoRemoveConfirmationOpen: !isMemoRemoveConfirmationOpen });
-  }
-
-  handleRemoveMemoSubmit = () => {
-    const { form } = this;
-    form.$('memo').reset();
-    this.setState({ isMemoRemoveConfirmationOpen: false, isMemoOpen: false });
-  }
+  memoForm = new ReactToolboxMobxForm({
+    fields: {
+      memo: {
+        label: ' ',
+        placeholder: this.context.intl.formatMessage(messages.memoPlaceholder),
+        value: '',
+      }
+    }
+  });
 
   render() {
     const { form } = this;
@@ -290,15 +247,12 @@ export default class WalletSendForm extends Component<Props, State> {
     const {
       transactionFee,
       transactionFeeError,
-      isMemoOpen,
-      isMemoRemoveConfirmationOpen,
     } = this.state;
 
     const amountField = form.$('amount');
     const receiverField = form.$('receiver');
     const amountFieldProps = amountField.bind();
     const totalAmount = formattedAmountToBigNumber(amountFieldProps.value).add(transactionFee);
-    const memoField = form.$('memo');
 
     const hasPendingTxWarning = (
       <div className={styles.contentWarning}>
@@ -338,36 +292,11 @@ export default class WalletSendForm extends Component<Props, State> {
               skin={<AmountInputSkin />}
             />
           </div>
-
-          <div className={styles.addMemoArea}>
-            <button className={`${styles.addMemoButton}${isMemoOpen ? ' ' + styles.open : ''}`} onClick={this.handleToggleMemo} type="button">
-              {intl.formatMessage(messages.memoButton)}
-            </button>
-            {isMemoOpen && (
-              dropboxToken ? (
-                <TextArea
-                  {...memoField.bind()}
-                  skin={<TextAreaSkin />}
-                />
-              ) : (
-                <div className={styles.linkInfo}>
-                  <div>{intl.formatMessage(messages.memoDropboxIsMissing)}</div>
-                  <Link to="/settings/accounts" className={styles.link}>{intl.formatMessage(messages.memoLinkDropbox)}</Link>
-                </div>
-              )
-            )}
-          </div>
+          <MemoArea dropboxToken={dropboxToken} intl={intl} form={this.memoForm} />
 
           {this._makeInvokeConfirmationButton()}
 
         </BorderedBox>
-        {isMemoRemoveConfirmationOpen && (
-          <WalletCloseMemoDialog
-            close={this.handleRemoveMemoDialog}
-            submit={this.handleRemoveMemoSubmit}
-            format={intl.formatMessage}
-          />
-        )}
         {this._makeConfirmationDialogComponent()}
 
       </div>
@@ -438,7 +367,7 @@ export default class WalletSendForm extends Component<Props, State> {
     }
 
     if (renderCB) {
-      const { form } = this;
+      const { form, memoForm } = this;
 
       const {
         currencyUnit,
@@ -451,7 +380,7 @@ export default class WalletSendForm extends Component<Props, State> {
       const receiverFieldProps = receiverField.bind();
       const amountFieldProps = amountField.bind();
       const totalAmount = formattedAmountToBigNumber(amountFieldProps.value).add(transactionFee);
-      const memo = this.form.$('memo').value;
+      const memo = memoForm.$('memo').value;
 
       const dialogProps = {
         amount: amountFieldProps.value,
