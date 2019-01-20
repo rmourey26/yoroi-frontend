@@ -119,7 +119,6 @@ export default class TransferSummaryPage extends Component<Props> {
         <BorderedBox>
 
           <div className={styles.body}>
-            <div> hello world</div>
             <div className={styles.addressLabelWrapper}>
               <div className={styles.addressLabel}>
                 {intl.formatMessage(messages.addressFromLabel)}

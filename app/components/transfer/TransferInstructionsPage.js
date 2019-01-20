@@ -88,7 +88,7 @@ export default class TransferInstructionsPage extends Component<Props> {
                   {intl.formatMessage(messages.instructionsText)}
                 </div>
               </div>
-              <div>Im here?</div>
+
               <Button
                 className={instructionsButtonClasses}
                 label={intl.formatMessage(messages.instructionsButton)}
