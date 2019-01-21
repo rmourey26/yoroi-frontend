@@ -5,6 +5,7 @@ import axios from 'axios';
 import { find } from 'lodash';
 import Store from '../base/Store';
 import Request from '../lib/LocalizedRequest';
+import { getSingleCryptoAccount } from '../../api/ada/adaLocalStorage';
 
 export default class AccountsStore extends Store {
 
@@ -60,6 +61,22 @@ export default class AccountsStore extends Store {
     });
   }
 
+  _readFile = async (x: any, db: any): any => {
+    const { path_display: path } = x;
+    const { fileBlob } = await db.filesDownload({ path });
+    const content = await this._readBlob(fileBlob);
+    return JSON.parse(content);
+  }
+
+  _uploadFile = async (db: any, content: any, key: string, overwrite: true) => {
+    return await db.filesUpload({
+      path: `/YoroiMemos/${key}.json`,
+      contents: JSON.stringify(content),
+      ...overwrite && { mode: 'overwrite' },
+    });
+  }
+
+  /* needs to be updated due to latest changes */
   _syncMemos = async () => {
     try {
       const { db, folderExists } = await this._checkDropboxFolder();
@@ -67,13 +84,7 @@ export default class AccountsStore extends Store {
         const { entries = [] } = await db.filesListFolder({ path: '/YoroiMemos', fetch: axios });
 
         const memos = await Promise.all(
-          entries.map(async (x) => {
-            const { name, path_display: path } = x;
-            const { fileBlob } = await db.filesDownload({ path });
-            const memoText = await this._readBlob(fileBlob);
-            const memoId = name.slice(0, name.length - 4);
-            return { memoText, memoId };
-          })
+          entries.map(async (x) => await this._readFile(x, db))
         );
         await this.saveAllMemosRequest.execute(memos);
         return memos;
@@ -82,6 +93,19 @@ export default class AccountsStore extends Store {
       console.log('sync err', err);
     }
   }
+
+  _createMemoContent = async (text: string, id: string, key: string, db: any, file: any) => {
+    if (!file) {
+      const data = {
+        [id]: text,
+      };
+      return await this._uploadFile(db, data, key, false);
+    }
+    const content = await this._readFile(file, db);
+    content[id] = text;
+    return await this._uploadFile(db, content, key, true);
+  }
+
 
   _updateDropboxToken = async (token: string) => {
     await this.setUserDropboxTokenRequest.execute(token);
@@ -103,10 +127,13 @@ export default class AccountsStore extends Store {
 
   _saveMemo = async ({ memoId = '', memoText = '' }: { memoId: string, memoText: string }): Promise<any> => {
     try {
+      const secretKey = getSingleCryptoAccount().root_cached_key;
       const { db, folderExists } = await this._checkDropboxFolder();
       if (!folderExists) await db.filesCreateFolderV2({ path: '/YoroiMemos' });
-      const saved = await db.filesUpload({ path: `/YoroiMemos/${memoId}.txt`, contents: memoText });
-      console.log('save memo result!', saved);
+
+      const { entries = [] } = await db.filesListFolder({ path: '/YoroiMemos', fetch: axios });
+      const current = find(entries, x => x.name === `${secretKey}.json`);
+      await this._createMemoContent(memoText, memoId, secretKey, db, current);
     } catch (err) {
       console.log('err', err);
     }
