@@ -3,9 +3,11 @@ import { observable, computed } from 'mobx';
 import { Dropbox } from 'dropbox';
 import axios from 'axios';
 import { find } from 'lodash';
+import bcryptjs from 'bcryptjs';
 import Store from '../base/Store';
 import Request from '../lib/LocalizedRequest';
 import { getSingleCryptoAccount } from '../../api/ada/adaLocalStorage';
+import { encryptWithPassword, decryptWithPassword } from '../../utils/passwordCipher';
 
 export default class AccountsStore extends Store {
 
@@ -79,15 +81,20 @@ export default class AccountsStore extends Store {
   /* needs to be updated due to latest changes */
   _syncMemos = async () => {
     try {
+      const secretKey = getSingleCryptoAccount().root_cached_key;
       const { db, folderExists } = await this._checkDropboxFolder();
       if (folderExists) {
         const { entries = [] } = await db.filesListFolder({ path: '/YoroiMemos', fetch: axios });
-
-        const memos = await Promise.all(
+        const file = find(x => x.name === `${secretKey}.json`);
+        if (file) {
+          const content = await this._readFile(file, db);
+          console.log('file content!', content);
+        }
+        /*const memos = await Promise.all(
           entries.map(async (x) => await this._readFile(x, db))
         );
         await this.saveAllMemosRequest.execute(memos);
-        return memos;
+        return memos;*/
       }
     } catch (err) {
       console.log('sync err', err);
@@ -128,12 +135,21 @@ export default class AccountsStore extends Store {
   _saveMemo = async ({ memoId = '', memoText = '' }: { memoId: string, memoText: string }): Promise<any> => {
     try {
       const secretKey = getSingleCryptoAccount().root_cached_key;
+      const hashed = await new Promise((resolve, reject) => {
+        bcryptjs.hash(secretKey, 10, (err, hash) => {
+          if (err) reject(err);
+          resolve(hash);
+        });
+      });
+      console.log('hash!', hashed);
+      // const bytes = new Uint8Array(Buffer.from())
       const { db, folderExists } = await this._checkDropboxFolder();
       if (!folderExists) await db.filesCreateFolderV2({ path: '/YoroiMemos' });
 
       const { entries = [] } = await db.filesListFolder({ path: '/YoroiMemos', fetch: axios });
-      const current = find(entries, x => x.name === `${secretKey}.json`);
-      await this._createMemoContent(memoText, memoId, secretKey, db, current);
+      const current = find(entries, x => x.name === `${hashed}.json`);
+      const foo = await this._createMemoContent(memoText, memoId, hashed, db, current);
+      console.log('foo', foo);
     } catch (err) {
       console.log('err', err);
     }

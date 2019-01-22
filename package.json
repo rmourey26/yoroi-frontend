@@ -97,12 +97,14 @@
   "dependencies": {
     "autoprefixer": "7.2.5",
     "axios": "^0.18.0",
+    "bcryptjs": "^2.4.3",
     "bignumber.js": "4.0.0",
     "bip39": "2.5.0",
     "bluebird": "3.3.4",
     "bs58": "4.0.1",
     "cbor": "4.1.4",
     "classnames": "2.1.3",
+    "crypto-js": "^3.1.9-1",
     "crypto-random-string": "1.0.0",
     "dropbox": "^4.0.14",
     "es6-error": "4.1.1",
@@ -128,6 +130,7 @@
     "ringbufferjs": "1.1.0",
     "route-parser": "0.0.5",
     "rust-cardano-crypto": "file:js-cardano-wasm",
+    "sha1": "^1.1.1",
     "trezor-connect": "6.0.2",
     "validator": "6.3.0"
   },
