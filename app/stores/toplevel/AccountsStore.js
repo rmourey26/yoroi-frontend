@@ -2,8 +2,8 @@
 import { observable, computed } from 'mobx';
 import { Dropbox } from 'dropbox';
 import axios from 'axios';
-import { find } from 'lodash';
-import bcryptjs from 'bcryptjs';
+import { find, map, keys } from 'lodash';
+import sha1 from 'sha1';
 import Store from '../base/Store';
 import Request from '../lib/LocalizedRequest';
 import { getSingleCryptoAccount } from '../../api/ada/adaLocalStorage';
@@ -29,7 +29,8 @@ export default class AccountsStore extends Store {
 
   @computed get localMemos() {
     const { result } =  this.getMemosFromLocalRequest.execute();
-    return result;
+    const key = getSingleCryptoAccount().root_cached_key;
+    return result ? result[key] : [];
   }
 
   @computed get dropboxToken(): string {
@@ -70,11 +71,20 @@ export default class AccountsStore extends Store {
     return JSON.parse(content);
   }
 
-  _uploadFile = async (db: any, content: any, key: string, overwrite: true) => {
+  _getFileBytes = data => new Uint8Array(Buffer.from(data, 'utf-8'));
+
+  _getStringFromBytes = bytes => {
+    const decoder = new TextDecoder('UTF-8');
+    return decoder.decode(bytes);
+  }
+
+  _uploadFile = async (db: any, content: any, key: string, update: any) => {
+
     return await db.filesUpload({
       path: `/YoroiMemos/${key}.json`,
-      contents: JSON.stringify(content),
-      ...overwrite && { mode: 'overwrite' },
+      contents: this._getFileBytes(JSON.stringify(content)),
+      //...update && { mode: { '.tag': 'update', update: 'a1c10ce0dd78' } },
+      ...update && { mode: 'overwrite' },
     });
   }
 
@@ -82,34 +92,38 @@ export default class AccountsStore extends Store {
   _syncMemos = async () => {
     try {
       const secretKey = getSingleCryptoAccount().root_cached_key;
+      const hash = sha1(secretKey);
+
       const { db, folderExists } = await this._checkDropboxFolder();
       if (folderExists) {
         const { entries = [] } = await db.filesListFolder({ path: '/YoroiMemos', fetch: axios });
-        const file = find(x => x.name === `${secretKey}.json`);
+        const file = find(entries, x => x.name === `${hash}.json`);
         if (file) {
           const content = await this._readFile(file, db);
-          console.log('file content!', content);
+          const memos = map(keys(content), key => {
+            const item = this._getStringFromBytes(decryptWithPassword(secretKey, content[key]));
+            return { memoId: key, memoText: item };
+          });
+          console.log('secret!', secretKey);
+          await this.saveAllMemosRequest.execute(memos, secretKey);
+          return memos;
         }
-        /*const memos = await Promise.all(
-          entries.map(async (x) => await this._readFile(x, db))
-        );
-        await this.saveAllMemosRequest.execute(memos);
-        return memos;*/
       }
     } catch (err) {
       console.log('sync err', err);
     }
   }
 
-  _createMemoContent = async (text: string, id: string, key: string, db: any, file: any) => {
+  _createMemoContent = async (text: string, id: string, key: string, password: string, db: any, file: any) => {
+    const encrypted = encryptWithPassword(password, this._getFileBytes(text));
     if (!file) {
       const data = {
-        [id]: text,
+        [id]: encrypted,
       };
       return await this._uploadFile(db, data, key, false);
     }
     const content = await this._readFile(file, db);
-    content[id] = text;
+    content[id] = encrypted;
     return await this._uploadFile(db, content, key, true);
   }
 
@@ -125,7 +139,8 @@ export default class AccountsStore extends Store {
   }
 
   _saveMemoToLocal = async (memo) => {
-    await this.saveMemoToLocalRequest.execute(memo);
+    const secretKey = getSingleCryptoAccount().root_cached_key;
+    await this.saveMemoToLocalRequest.execute(memo, secretKey);
   }
 
   _getMemosFromLocal = () => {
@@ -135,20 +150,14 @@ export default class AccountsStore extends Store {
   _saveMemo = async ({ memoId = '', memoText = '' }: { memoId: string, memoText: string }): Promise<any> => {
     try {
       const secretKey = getSingleCryptoAccount().root_cached_key;
-      const hashed = await new Promise((resolve, reject) => {
-        bcryptjs.hash(secretKey, 10, (err, hash) => {
-          if (err) reject(err);
-          resolve(hash);
-        });
-      });
-      console.log('hash!', hashed);
-      // const bytes = new Uint8Array(Buffer.from())
+      const hash = sha1(secretKey);
+
       const { db, folderExists } = await this._checkDropboxFolder();
       if (!folderExists) await db.filesCreateFolderV2({ path: '/YoroiMemos' });
 
       const { entries = [] } = await db.filesListFolder({ path: '/YoroiMemos', fetch: axios });
-      const current = find(entries, x => x.name === `${hashed}.json`);
-      const foo = await this._createMemoContent(memoText, memoId, hashed, db, current);
+      const current = find(entries, x => x.name === `${hash}.json`);
+      const foo = await this._createMemoContent(memoText, memoId, hash, secretKey, db, current);
       console.log('foo', foo);
     } catch (err) {
       console.log('err', err);

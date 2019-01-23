@@ -106,13 +106,18 @@ export default class LocalStorageApi {
     }
   });
 
-  saveMemoToStorage = (data): Promise<void> => new Promise((resolve, reject) => {
+  saveMemoToStorage = (data, key): Promise<void> => new Promise((resolve, reject) => {
     try {
       const memos = localStorage.getItem(storageKeys.MEMOS);
       if (memos) {
-        localStorage.setItem(storageKeys.MEMOS, JSON.stringify(JSON.parse(memos).concat(data)));
+        const all = JSON.parse(memos);
+        all[key] = all[key] ? all[key].concat(data) : [data];
+        localStorage.setItem(storageKeys.MEMOS, JSON.stringify(all));
       } else {
-        localStorage.setItem(storageKeys.MEMOS, JSON.stringify([data]));
+        const toSave = {
+          [key]: [data],
+        };
+        localStorage.setItem(storageKeys.MEMOS, JSON.stringify(toSave));
       }
       resolve();
     } catch (error) {
@@ -120,9 +125,20 @@ export default class LocalStorageApi {
     }
   });
 
-  saveAllMemosToStorage = (arr): Promise<void> => new Promise((resolve, reject) => {
+  saveAllMemosToStorage = (arr, key): Promise<void> => new Promise((resolve, reject) => {
+    console.log('key!', key);
     try {
-      localStorage.setItem(storageKeys.MEMOS, JSON.stringify(arr));
+      const memos = localStorage.getItem(storageKeys.MEMOS);
+      if (memos) {
+        const all = JSON.parse(memos);
+        all[key] = arr;
+        localStorage.setItem(storageKeys.MEMOS, JSON.stringify(all));
+      } else {
+        const toSave = {
+          [key]: arr,
+        };
+        localStorage.setItem(storageKeys.MEMOS, JSON.stringify(toSave));
+      }
       resolve();
     } catch (error) {
       return reject(error);
