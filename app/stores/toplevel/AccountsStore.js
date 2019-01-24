@@ -66,9 +66,9 @@ export default class AccountsStore extends Store {
 
   _readFile = async (x: any, db: any): any => {
     const { path_display: path } = x;
-    const { fileBlob } = await db.filesDownload({ path });
+    const { rev, fileBlob } = await db.filesDownload({ path });
     const content = await this._readBlob(fileBlob);
-    return JSON.parse(content);
+    return { rev, content: JSON.parse(content) };
   }
 
   _getFileBytes = data => new Uint8Array(Buffer.from(data, 'utf-8'));
@@ -78,13 +78,12 @@ export default class AccountsStore extends Store {
     return decoder.decode(bytes);
   }
 
-  _uploadFile = async (db: any, content: any, key: string, update: any) => {
+  _uploadFile = async (db: any, { rev, toUpload }: {rev: string, toUpload: any }, key: string, update: any) => {
 
     return await db.filesUpload({
       path: `/YoroiMemos/${key}.json`,
-      contents: this._getFileBytes(JSON.stringify(content)),
-      //...update && { mode: { '.tag': 'update', update: 'a1c10ce0dd78' } },
-      ...update && { mode: 'overwrite' },
+      contents: this._getFileBytes(JSON.stringify(toUpload)),
+      ...update && { mode: { '.tag': 'update', update: rev }, autorename: true },
     });
   }
 
@@ -120,11 +119,13 @@ export default class AccountsStore extends Store {
       const data = {
         [id]: encrypted,
       };
-      return await this._uploadFile(db, data, key, false);
+      return await this._uploadFile(db, { rev: '', toUpload: data }, key, false);
     }
-    const content = await this._readFile(file, db);
+    const { rev, content } = await this._readFile(file, db);
+    const toUpload = { ...content, [id]: encrypted };
     content[id] = encrypted;
-    return await this._uploadFile(db, content, key, true);
+    const data = { rev, toUpload };
+    return await this._uploadFile(db, data, key, true);
   }
 
 
@@ -149,7 +150,7 @@ export default class AccountsStore extends Store {
 
   _saveMemo = async ({ memoId = '', memoText = '' }: { memoId: string, memoText: string }): Promise<any> => {
     try {
-      const secretKey = getSingleCryptoAccount().root_cached_key;
+      /*const secretKey = getSingleCryptoAccount().root_cached_key;
       const hash = sha1(secretKey);
 
       const { db, folderExists } = await this._checkDropboxFolder();
@@ -158,9 +159,48 @@ export default class AccountsStore extends Store {
       const { entries = [] } = await db.filesListFolder({ path: '/YoroiMemos', fetch: axios });
       const current = find(entries, x => x.name === `${hash}.json`);
       const foo = await this._createMemoContent(memoText, memoId, hash, secretKey, db, current);
-      console.log('foo', foo);
+      console.log('foo', foo);*/
+      const secretKey = getSingleCryptoAccount().root_cached_key;
+      const hash = sha1(secretKey);
+
+      const { db, folderExists } = await this._checkDropboxFolder();
+      if (!folderExists) await db.filesCreateFolderV2({ path: '/YoroiMemos' });
+
+      const { entries = [] } = await db.filesListFolder({ path: '/YoroiMemos', fetch: axios });
+      const current = find(entries, x => x.name === `${hash}.json`);
+
+      const uploaded = await this._createMemoContent(memoText, memoId, hash, secretKey, db, current);
+      console.log('uploaded', uploaded);
+
+      const { name, path_display: path } = uploaded;
+      if (name.includes('conflict')) {
+        // read the origin file
+        // merge the content of both files
+        // upload again the merged content to the origin file
+        // delete the conflicted copy
+      }
+      /*const filePath = '/first.json';
+      const { rev, fileBlob } = await db.filesDownload({ path: filePath });
+      const content = await this._readBlob(fileBlob);
+      const parsed = JSON.parse(content);
+      parsed.bKey = 'b';
+      const uploaded = await db.filesUpload({ path: filePath, contents: JSON.stringify(parsed), mode: { '.tag': 'update', update: rev }, autorename: true });
+      console.log('up', uploaded);
+      const second = { ...parsed, cKey: 'c' };
+      const secondUp = await db.filesUpload({ path: filePath, contents: JSON.stringify(second), mode: { '.tag': 'update', update: rev }, autorename: true });
+      console.log('second up', secondUp);*/
     } catch (err) {
       console.log('err', err);
     }
   }
 }
+
+/*
+1. Check a folder and create one, if necessary
+2. try to find a file
+3. read a file, if it exists
+4. create content
+5. upload
+6. check if conflict
+7. if it is, resolve
+ */
