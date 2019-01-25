@@ -2,7 +2,7 @@
 import { observable, computed } from 'mobx';
 import { Dropbox } from 'dropbox';
 import axios from 'axios';
-import { find, map, keys } from 'lodash';
+import { find, map, keys, reduce } from 'lodash';
 import sha1 from 'sha1';
 import Store from '../base/Store';
 import Request from '../lib/LocalizedRequest';
@@ -78,12 +78,17 @@ export default class AccountsStore extends Store {
     return decoder.decode(bytes);
   }
 
-  _uploadFile = async (db: any, { rev, toUpload }: {rev: string, toUpload: any }, key: string, update: any) => {
 
+  _uploadFile = async (
+    db: any,
+    content: any,
+    path: string,
+    rev: string,
+  ) => {
     return await db.filesUpload({
-      path: `/YoroiMemos/${key}.json`,
-      contents: this._getFileBytes(JSON.stringify(toUpload)),
-      ...update && { mode: { '.tag': 'update', update: rev }, autorename: true },
+      path,
+      contents: this._getFileBytes(JSON.stringify(content)),
+      ...!!rev && { mode: { '.tag': 'update', update: rev }, autorename: true },
     });
   }
 
@@ -103,7 +108,6 @@ export default class AccountsStore extends Store {
             const item = this._getStringFromBytes(decryptWithPassword(secretKey, content[key]));
             return { memoId: key, memoText: item };
           });
-          console.log('secret!', secretKey);
           await this.saveAllMemosRequest.execute(memos, secretKey);
           return memos;
         }
@@ -148,7 +152,7 @@ export default class AccountsStore extends Store {
     this.getMemosFromLocalRequest.execute();
   }
 
-  _saveMemo = async ({ memoId = '', memoText = '' }: { memoId: string, memoText: string }): Promise<any> => {
+  /*_saveMemo = async ({ memoId = '', memoText = '' }: { memoId: string, memoText: string }): Promise<any> => {
     try {
       /*const secretKey = getSingleCryptoAccount().root_cached_key;
       const hash = sha1(secretKey);
@@ -159,7 +163,7 @@ export default class AccountsStore extends Store {
       const { entries = [] } = await db.filesListFolder({ path: '/YoroiMemos', fetch: axios });
       const current = find(entries, x => x.name === `${hash}.json`);
       const foo = await this._createMemoContent(memoText, memoId, hash, secretKey, db, current);
-      console.log('foo', foo);*/
+      console.log('foo', foo);
       const secretKey = getSingleCryptoAccount().root_cached_key;
       const hash = sha1(secretKey);
 
@@ -188,12 +192,12 @@ export default class AccountsStore extends Store {
       console.log('up', uploaded);
       const second = { ...parsed, cKey: 'c' };
       const secondUp = await db.filesUpload({ path: filePath, contents: JSON.stringify(second), mode: { '.tag': 'update', update: rev }, autorename: true });
-      console.log('second up', secondUp);*/
+      console.log('second up', secondUp);
     } catch (err) {
       console.log('err', err);
     }
   }
-}
+}*/
 
 /*
 1. Check a folder and create one, if necessary
@@ -204,3 +208,61 @@ export default class AccountsStore extends Store {
 6. check if conflict
 7. if it is, resolve
  */
+
+  _checkRev = (rev: string, localRev: string) => rev === localRev;
+
+  _getFileData = async (db: any, hash: any, localRev: string) => {
+    try {
+      const { entries = [] } = await db.filesListFolder({ path: '/YoroiMemos', fetch: axios });
+      const current = find(entries, x => x.name === `${hash}.json`);
+
+      if (!current) return { rev: undefined, data: {} };
+
+      const { rev } = current;
+      const isRevValid = this._checkRev(rev, localRev);
+
+      if (isRevValid) {
+        return { rev: undefined, data: {} };
+      }
+
+      const path = `/YoroiMemos/${hash}.json`;
+      const { rev: newRev, fileBlob } = await db.filesDownload({ path });
+      const content = await this._readBlob(fileBlob);
+      return { rev: newRev, data: JSON.parse(content) };
+
+    } catch (err) {
+      return err;
+    }
+  }
+
+  _getKeys = () => {
+    const key = getSingleCryptoAccount().root_cached_key;
+    const hash = sha1(key);
+    return { key, hash };
+  }
+
+
+  _saveMemo = async ({ memoId = '', memoText = '' }: { memoId: string, memoText: string }): Promise<any> => {
+    try {
+      const { key, hash } = this._getKeys();
+      const path = `/YoroiMemos/${hash}.json`;
+      const localRev = '';
+      const memo = {
+        [memoId]: encryptWithPassword(key, this._getFileBytes(memoText)),
+      };
+      const { db, folderExists } = await this._checkDropboxFolder();
+
+      if (!folderExists) await db.filesCreateFolderV2({ path: '/YoroiMemos' });
+
+      const { rev, data } = await this._getFileData(db, hash, localRev);
+
+      const toUpload = { ...data, ...memo };
+
+      const foo = await this._uploadFile(db, toUpload, path, rev);
+      console.log('foo', foo);
+    } catch (err) {
+      console.log('err', err);
+    }
+  }
+
+}
