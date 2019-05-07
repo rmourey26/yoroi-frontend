@@ -3,7 +3,6 @@
 Allow users to export their master private key following AdaLite's format,
 so that their wallet can be restored using the AdaLite wallet app.
 
-
 # Motivation
 
 This is a workaround that might be useful for users who somehow find themselves
@@ -11,7 +10,7 @@ unable to move their funds using Yoroi.
 
 # Proposal
 
-Write a functionality that exports a user wallet in a .json file, following the
+Write a functionality that exports a user wallet into a `.json` file, following the
 format detailed below.
 
 ## Adalite's Import/Export Wallet Representation
@@ -41,6 +40,12 @@ used by [Daedalus](https://github.com/input-output-hk/daedalus/blob/154d35475d41
   fileVersion: "1.0.0",
 }
 ```
+Notes:
+- `HARDENED_THRESHOLD = 0x80000000` (ie. 2^31)
+- `fileType`: *must* have value `"WALLETS_EXPORT"`
+- `fileVersion`: Since Daedalus only uses derivation scheme v1, AdaLite uses this field
+  to indicate which derivation scheme is adopted: `1.0.0` stands for derivation
+  scheme v1 and `2.0.0` stands for derivation scheme v2.
 
 The main attributes to compute are `walletSecretKey` and `passwordHash`.
 
@@ -54,31 +59,52 @@ The cryptographic functions used in AdaLite are defined in the custom JS library
 `walletSecretKey` is roughly obtained as follows:
 
 ```
-// starting from the mnemonic
 const {mnemonicToRootKeypair, cardanoMemoryCombine} = require('cardano-crypto.js')
-...
-const mnemonic = "logic easily ..."
-const walletSecretDef = await mnemonicToRootKeypair(mnemonic, 1)
-...
-const secretKey = walletSecretDef.rootSecret.slice(0, 64)
-const encryptedWalletSecret = cardanoMemoryCombine(secretKey, password)
+const cbor = require('borc')
 
-const walletSecretKey = cbor.encode(encryptedWalletSecret).toString('base64')
+const mnemonic = "logic easily genre kangaroo ..."
+const password = "the_password"
+
+mnemonicToRootKeypair(mnemonic, 2).then(walletSecret => {
+  const secretKey = walletSecret.slice(0, 64)
+  const extendedPublicKey = walletSecret.slice(64, 128)
+  const encryptedWalletSecret = Buffer.concat([cardanoMemoryCombine(secretKey, password), extendedPublicKey])
+  const walletSecretKey = cbor.encode(encryptedWalletSecret).toString('base64'))
+})
 ```
-
-
 
 ### Derivation of `passwordHash`
 
-TODO
-
-### The `fileVersion` field
-
-Since Daedalus only uses derivation scheme v1, AdaLite uses this field
-to indicate which derivation scheme is adopted: `1.0.0` stands for derivation
-scheme v1 and `2.0.0` stands for derivation scheme v2.
+The hashing function is based on the fast "async" (scrypt)[https://www.npmjs.com/package/scrypt-async] javascript implementation. The `passwordHash` field is essentially
+constructed as follows (see [`keypass-json.js`](https://github.com/vacuumlabs/adalite/blob/develop/app/frontend/wallet/keypass-json.js)):
+```
+async function hashPasswordAndPack(password, salt) {
+  const [n, r, p, hashLen] = [14, 8, 1, 32]
+  const hash = await new Promise((resolve, reject) => {
+    scrypt(
+      cbor.encode(transformPassword(password)),
+      salt,
+      {
+        N: 1 << n,
+        r,
+        p,
+        dkLen: hashLen,
+        encoding: 'base64',
+        interruptStep: 1000,
+      },
+      (hash) => resolve(hash)
+    )
+  })
+  return [n.toString(), r.toString(), p.toString(), salt.toString('base64'), hash].join('|')
+}
+```
 
 ## UI Changes
 
 In the Settings, (perhaps section "Wallet"?) add a button labeled "Export to
-AdaLite".
+AdaLite". The user will need to input his/her spending password in order to
+re-encrypt the root key following AdaLite procedure.
+
+Important: this is only an export feature so users must be warned that there is
+currently no way to import back an AdaLite wallet (of course, they may create
+a new Yoroi wallet and then send their funds to it).
