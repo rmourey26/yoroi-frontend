@@ -51,31 +51,31 @@ The main attributes to compute are `walletSecretKey` and `passwordHash`.
 
 ### Derivation of `walletSecretKey`
 
-The cryptographic functions used in AdaLite are defined in the custom JS library
-`cardano-crypto`.
+One can derive the `walletSecretKey` field starting from the `masterKey` in
+Yoroi's. For that we must use some cryptographic functions from vacuumlabs
+custom JS library `cardano-crypto.js`. The process is as follows:
 
-(TODO: determine if same outputs can be obtained using our rust bindings.)
 
-`walletSecretKey` is roughly obtained as follows:
+1. With the user password, decrypt the `masterKey`:
 
-```
-const {mnemonicToRootKeypair, cardanoMemoryCombine} = require('cardano-crypto.js')
-const cbor = require('borc')
 
-const mnemonic = "logic easily genre kangaroo ..."
-const password = "the_password"
+        const decryptedMasterKey = Buffer.from(decryptWithPassword(PASSWORD, encryptedMasterKey), 'hex')
 
-mnemonicToRootKeypair(mnemonic, 2).then(walletSecret => {
-  const secretKey = walletSecret.slice(0, 64)
-  const extendedPublicKey = walletSecret.slice(64, 128)
-  const encryptedWalletSecret = Buffer.concat([cardanoMemoryCombine(secretKey, password), extendedPublicKey])
-  const walletSecretKey = cbor.encode(encryptedWalletSecret).toString('base64'))
-})
-```
+2. Retrieve the secret key and extended public key:
+
+        // const {toPublic} = require('cardano-crypto.js')
+        const secretKey = decryptedMasterKey.slice(0, 64)
+        const extendedPublicKey = Buffer.concat([toPublic(secretKey), decryptedMasterKey.slice(64,)])
+
+3. Re-encrypt with user password:
+
+        // const {cardanoMemoryCombine} = require('cardano-crypto.js')
+        const encryptedWalletSecret = Buffer.concat([cardanoMemoryCombine(secretKey, PASSWORD), extendedPublicKey])
+        const walletSecretKey = cbor.encode(encryptedWalletSecret).toString('base64')
 
 ### Derivation of `passwordHash`
 
-The hashing function is based on the fast "async" (scrypt)[https://www.npmjs.com/package/scrypt-async] javascript implementation. The `passwordHash` field is essentially
+The hashing function is based on the fast "async" [scrypt](https://www.npmjs.com/package/scrypt-async) javascript implementation. The `passwordHash` field is essentially
 constructed as follows (see [`keypass-json.js`](https://github.com/vacuumlabs/adalite/blob/develop/app/frontend/wallet/keypass-json.js)):
 ```
 async function hashPasswordAndPack(password, salt) {
@@ -101,9 +101,9 @@ async function hashPasswordAndPack(password, salt) {
 
 ## UI Changes
 
-In the Settings, (perhaps section "Wallet"?) add a button labeled "Export to
+In the Settings, (perhaps in the "Wallet" section) add a button labeled "Export to
 AdaLite". The user will need to input his/her spending password in order to
-re-encrypt the root key following AdaLite procedure.
+decrypt/encrypt the root key following AdaLite's format.
 
 Important: this is only an export feature so users must be warned that there is
 currently no way to import back an AdaLite wallet (of course, they may create
