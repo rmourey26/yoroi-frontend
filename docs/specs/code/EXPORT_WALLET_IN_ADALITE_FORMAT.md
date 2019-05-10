@@ -3,6 +3,9 @@
 Allow users to export their master private key following AdaLite's format,
 so that their wallet can be restored using the AdaLite wallet app.
 
+This feature requires users to remember their spending password but not their
+mnemonics.
+
 # Motivation
 
 This is a workaround that might be useful for users who somehow find themselves
@@ -52,7 +55,7 @@ The main attributes to compute are `walletSecretKey` and `passwordHash`.
 ### Derivation of `walletSecretKey`
 
 One can derive the `walletSecretKey` field starting from the `masterKey` in
-Yoroi's. For that we must use some cryptographic functions from vacuumlabs
+Yoroi's `localStorage`. For that we must use some cryptographic functions from vacuumlabs
 custom JS library `cardano-crypto.js`. The process is as follows:
 
 
@@ -78,6 +81,9 @@ custom JS library `cardano-crypto.js`. The process is as follows:
 The hashing function is based on the fast "async" [scrypt](https://www.npmjs.com/package/scrypt-async) javascript implementation. The `passwordHash` field is essentially
 constructed as follows (see [`keypass-json.js`](https://github.com/vacuumlabs/adalite/blob/develop/app/frontend/wallet/keypass-json.js)):
 ```
+// const cbor = require('borc')
+// {blake2b, scrypt} = require('cardano-crypto.js')
+
 async function hashPasswordAndPack(password, salt) {
   const [n, r, p, hashLen] = [14, 8, 1, 32]
   const hash = await new Promise((resolve, reject) => {
@@ -103,8 +109,8 @@ async function hashPasswordAndPack(password, salt) {
 
 In the Settings, (perhaps in the "Wallet" section) add a button labeled "Export to
 AdaLite". The user will need to input his/her spending password in order to
-decrypt/encrypt the root key following AdaLite's format.
+decrypt `masterKey` and re-encrypt it following AdaLite's format.
 
 Important: this is only an export feature so users must be warned that there is
 currently no way to import back an AdaLite wallet (of course, they may create
-a new Yoroi wallet and then send their funds to it).
+a new Yoroi wallet and then send their funds into it).
