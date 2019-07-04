@@ -135,28 +135,28 @@ export class RemoteFetcher implements IFetcher {
     );
     const signedTx64 = Buffer.from(signedTxHex).toString('base64');
     console.log(signedTx64);
-    // return axios(
-    //   `${backendUrl}/api/txs/signed`,
-    //   {
-    //     method: 'post',
-    //     data: {
-    //       signedTx: signedTx64
-    //     },
-    //     headers: {
-    //       'yoroi-version': this.lastLaunchVersion(),
-    //       'yoroi-locale': this.currentLocale()
-    //     }
-    //   }
-    // ).then(() => ({
-    //   txId: body.signedTx.id()
-    // }))
-    //   .catch((error) => {
-    //     Logger.error('RemoteFetcher::sendTx error: ' + stringifyError(error));
-    //     if (error.request.response.includes('Invalid witness')) {
-    //       throw new InvalidWitnessError();
-    //     }
-    //     throw new SendTransactionApiError();
-    //   });
+    return axios(
+      `${backendUrl}/api/txs/signed`,
+      {
+        method: 'get',
+        data: {
+          signedTx: signedTx64
+        },
+        headers: {
+          'yoroi-version': this.lastLaunchVersion(),
+          'yoroi-locale': this.currentLocale()
+        }
+      }
+    ).then(() => ({
+      txId: body.signedTx.id()
+    }))
+      .catch((error) => {
+        Logger.error('RemoteFetcher::sendTx error: ' + stringifyError(error));
+        if (error.request.response.includes('Invalid witness')) {
+          throw new InvalidWitnessError();
+        }
+        throw new SendTransactionApiError();
+      });
   }
 
   checkAddressesInUse = (body: FilterUsedRequest): Promise<FilterUsedResponse> => (
