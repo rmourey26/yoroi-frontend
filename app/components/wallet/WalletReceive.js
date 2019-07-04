@@ -11,14 +11,15 @@ import { ButtonSkin } from 'react-polymorph/lib/skins/simple/ButtonSkin';
 import BorderedBox from '../widgets/BorderedBox';
 import iconCopy from '../../assets/images/clipboard-ic.inline.svg';
 import verifyIcon from '../../assets/images/verify-icon.inline.svg';
+import generateURIIcon from '../../assets/images/generate-uri.inline.svg';
 import WalletAddress from '../../domain/WalletAddress';
 import LocalizableError from '../../i18n/LocalizableError';
 import LoadingSpinner from '../widgets/LoadingSpinner';
 import styles from './WalletReceive.scss';
 import CopyableAddress from '../widgets/CopyableAddress';
 import RawHash from '../widgets/hashWrappers/RawHash';
-import UsableHash from '../widgets/hashWrappers/UsableHash';
 import ExplorableHashContainer from '../../containers/widgets/ExplorableHashContainer';
+import type { ExplorerType } from '../../domain/Explorer';
 
 const messages = defineMessages({
   walletAddressLabel: {
@@ -53,18 +54,24 @@ const messages = defineMessages({
     id: 'wallet.receive.page.verifyAddressLabel',
     defaultMessage: '!!!Verify address',
   },
+  generatePaymentURLLabel: {
+    id: 'wallet.receive.page.generatePaymentURLLabel',
+    defaultMessage: '!!!Generate payment URL',
+  },
 });
 
-type Props = {
+type Props = {|
   walletAddress: string,
+  selectedExplorer: ExplorerType,
   isWalletAddressUsed: boolean,
   walletAddresses: Array<WalletAddress>,
   onGenerateAddress: Function,
   onCopyAddress: Function,
   onVerifyAddress: Function,
+  onGeneratePaymentURI: Function,
   isSubmitting: boolean,
   error?: ?LocalizableError,
-};
+|};
 
 type State = {
   showUsed: boolean,
@@ -97,7 +104,7 @@ export default class WalletReceive extends Component<Props, State> {
   render() {
     const {
       walletAddress, walletAddresses,
-      onCopyAddress, onVerifyAddress,
+      onCopyAddress, onVerifyAddress, onGeneratePaymentURI,
       isSubmitting, error, isWalletAddressUsed,
     } = this.props;
     const { intl } = this.context;
@@ -119,6 +126,10 @@ export default class WalletReceive extends Component<Props, State> {
       />
     );
 
+    const copyableHashClass = classnames([
+      styles.copyableHash,
+    ]);
+
     // Get QRCode color value from active theme's CSS variable
     const qrCodeBackgroundColor = document.documentElement ?
       document.documentElement.style.getPropertyValue('--theme-receive-qr-code-background-color') : 'transparent';
@@ -133,10 +144,21 @@ export default class WalletReceive extends Component<Props, State> {
               {intl.formatMessage(messages.walletAddressLabel)}
             </div>
             <CopyableAddress
-              address={walletAddress}
+              hash={walletAddress}
               onCopyAddress={onCopyAddress}
-              isUsed={isWalletAddressUsed}
-            />
+            >
+              <ExplorableHashContainer
+                selectedExplorer={this.props.selectedExplorer}
+                hash={walletAddress}
+                light={isWalletAddressUsed}
+                linkType="address"
+              >
+                <RawHash light={isWalletAddressUsed}>
+                  <span className={copyableHashClass}>{walletAddress}</span>
+                </RawHash>
+              </ExplorableHashContainer>
+            </CopyableAddress>
+            <div className={styles.postCopyMargin} />
             <div className={styles.instructionsText}>
               <FormattedHTMLMessage {...messages.walletReceiveInstructions} />
             </div>
@@ -174,18 +196,39 @@ export default class WalletReceive extends Component<Props, State> {
               <div key={`gen-${address.id}`} className={addressClasses}>
                 {/* Address Id */}
                 <ExplorableHashContainer
+                  selectedExplorer={this.props.selectedExplorer}
                   hash={address.id}
-                  isUsed={address.isUsed}
+                  light={address.isUsed}
+                  linkType="address"
                 >
-                  <UsableHash isUsed={address.isUsed}>
-                    <RawHash>
-                      <span className={styles.addressId}>{address.id}</span>
-                    </RawHash>
-                  </UsableHash>
+                  <RawHash light={address.isUsed}>
+                    {address.id}
+                  </RawHash>
                 </ExplorableHashContainer>
                 <div className={styles.addressMargin} />
                 {/* Address Action block start */}
                 <div className={styles.addressActions}>
+                  {/* Generate payment URL for Address action */}
+                  <div className={classnames([
+                    styles.addressActionItemBlock,
+                    styles.generateURLActionBlock])}
+                  >
+                    <button
+                      type="button"
+                      onClick={onGeneratePaymentURI.bind(this, address.id)}
+                      className={styles.btnGenerateURI}
+                    >
+                      <div className={styles.generateURLActionBlock}>
+                        <SvgInline
+                          svg={generateURIIcon}
+                          className={styles.generateURIIcon}
+                        />
+                        <span className={styles.actionIconText}>
+                          {intl.formatMessage(messages.generatePaymentURLLabel)}
+                        </span>
+                      </div>
+                    </button>
+                  </div>
                   {/* Verify Address action */}
                   <div className={classnames([
                     styles.addressActionItemBlock,
@@ -202,9 +245,7 @@ export default class WalletReceive extends Component<Props, State> {
                           svg={verifyIcon}
                           className={styles.verifyIcon}
                         />
-                        <span className={styles.actionIconText}>
-                          {intl.formatMessage(messages.verifyAddressLabel)}
-                        </span>
+                        <span>{intl.formatMessage(messages.verifyAddressLabel)}</span>
                       </div>
                     </button>
                   </div>
@@ -215,9 +256,7 @@ export default class WalletReceive extends Component<Props, State> {
                   >
                     <div className={styles.addressActionItemBlock}>
                       <SvgInline svg={iconCopy} className={styles.copyIcon} />
-                      <span className={styles.actionIconText}>
-                        {intl.formatMessage(messages.copyAddressLabel)}
-                      </span>
+                      <span>{intl.formatMessage(messages.copyAddressLabel)}</span>
                     </div>
                   </CopyToClipboard>
                 </div>

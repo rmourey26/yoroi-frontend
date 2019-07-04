@@ -2,6 +2,7 @@
   text-align: justify;
 
   &.fixedHeight {
+    padding-right: 10px;
     max-height: calc(100vh - 260px);
     overflow: auto;
   }
@@ -16,6 +17,11 @@
     margin-top: 22px;
   }
 
+  strong {
+    font-family: var(--rp-theme-font-regular);
+    font-size: 17px;
+  }
+
   ul {
     list-style: disc;
     margin-left: 20px;
@@ -28,9 +34,6 @@
     line-height: 1.38;
     margin-bottom: 11px;
 
-    strong {
-      font-weight: 500;
-    }
   }
 }
 

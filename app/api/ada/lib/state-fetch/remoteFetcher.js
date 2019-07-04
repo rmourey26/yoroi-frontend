@@ -6,7 +6,8 @@ import type {
   UtxoSumRequest, UtxoSumResponse,
   HistoryRequest, HistoryResponse,
   SignedRequest, SignedResponse,
-  FilterUsedRequest, FilterUsedResponse
+  FilterUsedRequest, FilterUsedResponse,
+  ServerStatusResponse
 } from './types';
 
 import type { IFetcher } from './IFetcher';
@@ -24,6 +25,7 @@ import {
   SendTransactionApiError,
   CheckAdressesInUseApiError,
   InvalidWitnessError,
+  ServerStatusError,
 } from '../../errors';
 
 import type { ConfigType } from '../../../../../config/config-types';
@@ -36,6 +38,15 @@ const backendUrl = CONFIG.network.backendUrl;
  * https://github.com/Emurgo/yoroi-backend-service/
  */
 export class RemoteFetcher implements IFetcher {
+
+  lastLaunchVersion: () => string;
+  currentLocale: () => string;
+
+  constructor(lastLaunchVersion: () => string, currentLocale: () => string) {
+    this.lastLaunchVersion = lastLaunchVersion;
+    this.currentLocale = currentLocale;
+  }
+
   getUTXOsForAddresses = (body: AddressUtxoRequest): Promise<AddressUtxoResponse> => (
     axios(
       `${backendUrl}/api/txs/utxoForAddresses`,
@@ -43,6 +54,10 @@ export class RemoteFetcher implements IFetcher {
         method: 'post',
         data: {
           addresses: body.addresses
+        },
+        headers: {
+          'yoroi-version': this.lastLaunchVersion(),
+          'yoroi-locale': this.currentLocale()
         }
       }
     ).then(response => response.data)
@@ -59,6 +74,10 @@ export class RemoteFetcher implements IFetcher {
         method: 'post',
         data: {
           txsHashes: body.txsHashes
+        },
+        headers: {
+          'yoroi-version': this.lastLaunchVersion(),
+          'yoroi-locale': this.currentLocale()
         }
       }
     ).then(response => response.data)
@@ -75,6 +94,10 @@ export class RemoteFetcher implements IFetcher {
         method: 'post',
         data: {
           addresses: body.addresses
+        },
+        headers: {
+          'yoroi-version': this.lastLaunchVersion(),
+          'yoroi-locale': this.currentLocale()
         }
       }
     ).then(response => response.data)
@@ -92,6 +115,10 @@ export class RemoteFetcher implements IFetcher {
         data: {
           addresses: body.addresses,
           dateFrom: body.dateFrom
+        },
+        headers: {
+          'yoroi-version': this.lastLaunchVersion(),
+          'yoroi-locale': this.currentLocale()
         }
       }
     ).then(response => response.data)
@@ -107,25 +134,28 @@ export class RemoteFetcher implements IFetcher {
       'hex'
     );
     const signedTx64 = Buffer.from(signedTxHex).toString('base64');
-    console.log(signedTx64);
-    // return axios(
-    //   `${backendUrl}/api/txs/signed`,
-    //   {
-    //     method: 'post',
-    //     data: {
-    //       signedTx: signedTx64
-    //     }
-    //   }
-    // ).then(() => ({
-    //   txId: body.signedTx.id()
-    // }))
-    //   .catch((error) => {
-    //     Logger.error('RemoteFetcher::sendTx error: ' + stringifyError(error));
-    //     if (error.request.response.includes('Invalid witness')) {
-    //       throw new InvalidWitnessError();
-    //     }
-    //     throw new SendTransactionApiError();
-    //   });
+    return axios(
+      `${backendUrl}/api/txs/signed`,
+      {
+        method: 'post',
+        data: {
+          signedTx: signedTx64
+        },
+        headers: {
+          'yoroi-version': this.lastLaunchVersion(),
+          'yoroi-locale': this.currentLocale()
+        }
+      }
+    ).then(() => ({
+      txId: body.signedTx.id()
+    }))
+      .catch((error) => {
+        Logger.error('RemoteFetcher::sendTx error: ' + stringifyError(error));
+        if (error.request.response.includes('Invalid witness')) {
+          throw new InvalidWitnessError();
+        }
+        throw new SendTransactionApiError();
+      });
   }
 
   checkAddressesInUse = (body: FilterUsedRequest): Promise<FilterUsedResponse> => (
@@ -135,12 +165,29 @@ export class RemoteFetcher implements IFetcher {
         method: 'post',
         data: {
           addresses: body.addresses
+        },
+        headers: {
+          'yoroi-version': this.lastLaunchVersion(),
+          'yoroi-locale': this.currentLocale()
         }
       }
     ).then(response => response.data)
       .catch((error) => {
         Logger.error('RemoteFetcher::checkAddressesInUse error: ' + stringifyError(error));
         throw new CheckAdressesInUseApiError();
+      })
+  )
+
+  checkServerStatus = (): Promise<ServerStatusResponse> => (
+    axios(
+      `${backendUrl}/api/status`,
+      {
+        method: 'get'
+      }
+    ).then(response => response.data)
+      .catch((error) => {
+        Logger.error('RemoteFetcher::checkServerStatus error: ' + stringifyError(error));
+        throw new ServerStatusError();
       })
   )
 }

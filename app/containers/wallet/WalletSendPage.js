@@ -119,6 +119,8 @@ export default class WalletSendPage extends Component<Props> {
           isCalculatingFee={transactionBuilderStore.createUnsignedTx.isExecuting}
           reset={() => txBuilderActions.reset.trigger()}
           error={transactionBuilderStore.createUnsignedTx.error}
+          uriParams={this.props.stores.loading.uriParams}
+          resetUriParams={this.props.stores.loading.resetUriParams}
         />
         {this.renderDialog()}
       </div>
@@ -185,6 +187,7 @@ export default class WalletSendPage extends Component<Props> {
       hwSendConfirmationDialog = (
         <HWSendConfirmationDialog
           staleTx={transactionBuilderStore.txMismatch}
+          selectedExplorer={this.props.stores.profile.selectedExplorer}
           amount={formattedWalletAmount(totalInput.minus(fee))}
           receivers={receivers}
           totalAmount={formattedWalletAmount(totalInput)}
@@ -208,6 +211,7 @@ export default class WalletSendPage extends Component<Props> {
       hwSendConfirmationDialog = (
         <HWSendConfirmationDialog
           staleTx={transactionBuilderStore.txMismatch}
+          selectedExplorer={this.props.stores.profile.selectedExplorer}
           amount={formattedWalletAmount(totalInput.minus(fee))}
           receivers={receivers}
           totalAmount={formattedWalletAmount(totalInput)}

@@ -7,19 +7,18 @@ import type { InjectedProps } from '../../types/injectedPropsType';
 import StaticTopbarTitle from '../../components/topbar/StaticTopbarTitle';
 import TopBar from '../../components/topbar/TopBar';
 import TransferLayout from '../../components/transfer/TransferLayout';
-import DaedalusTransferInstructionsPage from './DaedalusTransferInstructionsPage';
+import TransferInstructionsPage from '../../components/transfer/TransferInstructionsPage';
 import DaedalusTransferFormPage from './DaedalusTransferFormPage';
 import DaedalusTransferMasterKeyFormPage from './DaedalusTransferMasterKeyFormPage';
 import DaedalusTransferWaitingPage from './DaedalusTransferWaitingPage';
 import DaedalusTransferSummaryPage from './DaedalusTransferSummaryPage';
 import DaedalusTransferErrorPage from './DaedalusTransferErrorPage';
 import environment from '../../environment';
-import resolver from '../../utils/imports';
 import { ROUTES } from '../../routes-config';
 import config from '../../config';
 
-const { formattedWalletAmount } = resolver('utils/formatters');
-const MainLayout = resolver('containers/MainLayout');
+import { formattedWalletAmount } from '../../utils/formatters';
+import MainLayout from '../MainLayout';
 
 const messages = defineMessages({
   title: {
@@ -38,17 +37,6 @@ export default class DaedalusTransferPage extends Component<InjectedProps> {
   goToCreateWallet = () => {
     this._getRouter().goToRoute.trigger({
       route: ROUTES.WALLETS.ADD
-    });
-  }
-
-  goToReceiveScreen = () => {
-    const wallet = this._getWalletsStore().active;
-    this._getRouter().goToRoute.trigger({
-      route: ROUTES.WALLETS.PAGE,
-      params: {
-        id: wallet && wallet.id,
-        page: 'receive'
-      },
     });
   }
 
@@ -100,6 +88,8 @@ export default class DaedalusTransferPage extends Component<InjectedProps> {
   render() {
     const { stores, actions } = this.props;
     const { topbar, profile } = stores;
+    const { checkAdaServerStatus } = stores.substores[environment.API].serverConnectionStore;
+
     const topbarTitle = (
       <StaticTopbarTitle title={this.context.intl.formatMessage(messages.title)} />
     );
@@ -119,11 +109,16 @@ export default class DaedalusTransferPage extends Component<InjectedProps> {
     switch (daedalusTransfer.status) {
       case 'uninitialized':
         return (
-          <MainLayout topbar={topBar} classicTheme={profile.isClassicTheme}>
+          <MainLayout
+            topbar={topBar}
+            classicTheme={profile.isClassicTheme}
+            connectionErrorType={checkAdaServerStatus}
+            actions={actions}
+            stores={stores}
+          >
             <TransferLayout>
-              <DaedalusTransferInstructionsPage
+              <TransferInstructionsPage
                 onFollowInstructionsPrerequisites={this.goToCreateWallet}
-                onAnswerYes={this.goToReceiveScreen}
                 onConfirm={this.startTransferFunds}
                 onPaperConfirm={this.startTransferPaperFunds}
                 onMasterKeyConfirm={this.startTransferMasterKey}
@@ -134,7 +129,13 @@ export default class DaedalusTransferPage extends Component<InjectedProps> {
         );
       case 'gettingMnemonics':
         return (
-          <MainLayout topbar={topBar} classicTheme={profile.isClassicTheme}>
+          <MainLayout
+            topbar={topBar}
+            classicTheme={profile.isClassicTheme}
+            connectionErrorType={checkAdaServerStatus}
+            actions={actions}
+            stores={stores}
+          >
             <TransferLayout>
               <DaedalusTransferFormPage
                 onSubmit={this.setupTransferFundsWithMnemonic}
@@ -152,7 +153,13 @@ export default class DaedalusTransferPage extends Component<InjectedProps> {
         );
       case 'gettingPaperMnemonics':
         return (
-          <MainLayout topbar={topBar} classicTheme={profile.isClassicTheme}>
+          <MainLayout
+            topbar={topBar}
+            classicTheme={profile.isClassicTheme}
+            connectionErrorType={checkAdaServerStatus}
+            actions={actions}
+            stores={stores}
+          >
             <TransferLayout>
               <DaedalusTransferFormPage
                 onSubmit={this.setupTransferFundsWithMnemonic}
@@ -167,7 +174,13 @@ export default class DaedalusTransferPage extends Component<InjectedProps> {
         );
       case 'gettingMasterKey':
         return (
-          <MainLayout topbar={topBar} classicTheme={profile.isClassicTheme}>
+          <MainLayout
+            topbar={topBar}
+            classicTheme={profile.isClassicTheme}
+            connectionErrorType={checkAdaServerStatus}
+            actions={actions}
+            stores={stores}
+          >
             <TransferLayout>
               <DaedalusTransferMasterKeyFormPage
                 onSubmit={this.setupTransferFundsWithMasterKey}
@@ -181,7 +194,13 @@ export default class DaedalusTransferPage extends Component<InjectedProps> {
       case 'checkingAddresses':
       case 'generatingTx':
         return (
-          <MainLayout topbar={topBar} classicTheme={profile.isClassicTheme}>
+          <MainLayout
+            topbar={topBar}
+            classicTheme={profile.isClassicTheme}
+            connectionErrorType={checkAdaServerStatus}
+            actions={actions}
+            stores={stores}
+          >
             <TransferLayout>
               <DaedalusTransferWaitingPage status={daedalusTransfer.status} />
             </TransferLayout>
@@ -192,10 +211,17 @@ export default class DaedalusTransferPage extends Component<InjectedProps> {
           return null; // TODO: throw error? Shoudln't happen
         }
         return (
-          <MainLayout topbar={topBar} classicTheme={profile.isClassicTheme}>
+          <MainLayout
+            topbar={topBar}
+            classicTheme={profile.isClassicTheme}
+            connectionErrorType={checkAdaServerStatus}
+            actions={actions}
+            stores={stores}
+          >
             <TransferLayout>
               <DaedalusTransferSummaryPage
                 formattedWalletAmount={formattedWalletAmount}
+                selectedExplorer={this.props.stores.profile.selectedExplorer}
                 transferTx={daedalusTransfer.transferTx}
                 onSubmit={this.tranferFunds}
                 isSubmitting={daedalusTransfer.transferFundsRequest.isExecuting}
@@ -208,7 +234,13 @@ export default class DaedalusTransferPage extends Component<InjectedProps> {
         );
       case 'error':
         return (
-          <MainLayout topbar={topBar} classicTheme={profile.isClassicTheme}>
+          <MainLayout
+            topbar={topBar}
+            classicTheme={profile.isClassicTheme}
+            connectionErrorType={checkAdaServerStatus}
+            actions={actions}
+            stores={stores}
+          >
             <TransferLayout>
               <DaedalusTransferErrorPage
                 error={daedalusTransfer.error}

@@ -34,13 +34,13 @@ const messages = defineMessages({
   },
 });
 
-type Props = {
+type Props = {|
   onCreatePaper: Function,
   dialog: Node,
   paperWalletsIntroText: string,
   isDialogOpen: boolean,
   error?: ?LocalizableError,
-};
+|};
 
 @observer
 export default class PaperWalletSettings extends Component<Props> {
@@ -71,10 +71,6 @@ export default class PaperWalletSettings extends Component<Props> {
         value: true,
       },
     }
-  }, {
-    options: {
-      validateOnChange: false,
-    },
   });
 
   setPrintPaperIdentification = (printPaperWalletIdentification: boolean) => {
@@ -98,7 +94,7 @@ export default class PaperWalletSettings extends Component<Props> {
       <div className={componentClassNames}>
 
         <div className={styles.intro}>
-          <ReactMarkdown source={paperWalletsIntroText} />
+          <ReactMarkdown source={paperWalletsIntroText} escapeHtml={false} />
         </div>
 
         <Select

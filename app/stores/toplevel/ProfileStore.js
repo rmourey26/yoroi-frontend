@@ -9,6 +9,14 @@ import { THEMES } from '../../themes';
 import type { Theme } from '../../themes';
 import { ROUTES } from '../../routes-config';
 import globalMessages from '../../i18n/global-messages';
+import registerProtocols from '../../uri-protocols';
+import type { ExplorerType } from '../../domain/Explorer';
+import type {
+  GetSelectedExplorerFunc, SaveSelectedExplorerFunc,
+} from '../../api/ada';
+import type {
+  SetCustomUserThemeRequest
+} from '../../api/localStorage/index';
 
 export default class ProfileStore extends Store {
 
@@ -22,10 +30,11 @@ export default class ProfileStore extends Store {
     { value: 'de-DE', label: globalMessages.languageGerman, svg: require('../../assets/images/flags/german.inline.svg') },
     { value: 'fr-FR', label: globalMessages.languageFrench, svg: require('../../assets/images/flags/french.inline.svg') },
     { value: 'es-ES', label: globalMessages.languageSpanish, svg: require('../../assets/images/flags/spanish.inline.svg') },
+    { value: 'it-IT', label: globalMessages.languageItalian, svg: require('../../assets/images/flags/italian.inline.svg') },
+    { value: 'id-ID', label: globalMessages.languageIndonesian, svg: require('../../assets/images/flags/indonesian.inline.svg') },
     ...(!environment.isMainnet()
       ? [
-        { value: 'id-ID', label: globalMessages.languageIndonesian, svg: require('../../assets/images/flags/indonesian.inline.svg') },
-        { value: 'it-IT', label: globalMessages.languageItalian, svg: require('../../assets/images/flags/italian.inline.svg') },
+        // add any language that's mid-translation here
       ]
       : [])
   ];
@@ -39,7 +48,6 @@ export default class ProfileStore extends Store {
     fractionGroupSize: 0
   };
 
-  /* eslint-disable max-len */
   @observable getProfileLocaleRequest: Request<void => Promise<string>>
     = new Request<void => Promise<string>>(this.api.localStorage.getUserLocale);
 
@@ -55,8 +63,10 @@ export default class ProfileStore extends Store {
   @observable getCustomThemeRequest: Request<void => Promise<string>>
     = new Request<void => Promise<string>>(this.api.localStorage.getCustomUserTheme);
 
-  @observable setCustomThemeRequest: Request<(string, Object) => Promise<void>>
-    = new Request<(string, Object) => Promise<void>>(this.api.localStorage.setCustomUserTheme);
+  @observable setCustomThemeRequest: Request<SetCustomUserThemeRequest => Promise<void>>
+    = new Request<SetCustomUserThemeRequest => Promise<void>>(
+      this.api.localStorage.setCustomUserTheme
+    );
 
   @observable unsetCustomThemeRequest: Request<void => Promise<void>>
     = new Request<void => Promise<void>>(this.api.localStorage.unsetCustomUserTheme);
@@ -73,20 +83,33 @@ export default class ProfileStore extends Store {
   @observable setLastLaunchVersionRequest: Request<string => Promise<void>>
     = new Request<string => Promise<void>>(this.api.localStorage.setLastLaunchVersion);
 
-  /* eslint-enable max-len */
+  @observable getSelectedExplorerRequest: Request<GetSelectedExplorerFunc>
+    = new Request<GetSelectedExplorerFunc>(this.api.ada.getSelectedExplorer);
+
+  @observable setSelectedExplorerRequest: Request<SaveSelectedExplorerFunc>
+    = new Request<SaveSelectedExplorerFunc>(this.api.ada.saveSelectedExplorer);
+
+  @observable getHideBalanceRequest: Request<void => Promise<boolean>>
+    = new Request<void => Promise<boolean>>(this.api.localStorage.getHideBalance);
+
+  @observable setHideBalanceRequest: Request<boolean => Promise<void>>
+    = new Request<boolean => Promise<void>>(this.api.localStorage.setHideBalance);
 
   setup() {
     this.actions.profile.updateLocale.listen(this._updateLocale);
+    this.actions.profile.updateSelectedExplorer.listen(this.setSelectedExplorer);
     this.actions.profile.acceptTermsOfUse.listen(this._acceptTermsOfUse);
     this.actions.profile.updateTheme.listen(this._updateTheme);
     this.actions.profile.exportTheme.listen(this._exportTheme);
     this.actions.profile.redirectToTermsOfUse.listen(this._redirectToTermsOfUse);
+    this.actions.profile.updateHideBalance.listen(this._updateHideBalance);
     this.registerReactions([
       this._setBigNumberFormat,
       this._updateMomentJsLocaleAfterLocaleChange,
       this._redirectToLanguageSelectionIfNoLocaleSet,
       this._redirectToTermsOfUseScreenIfTermsNotAccepted,
       this._redirectToMainUiAfterTermsAreAccepted,
+      this._attemptURIProtocolRegistrationIfNoLocaleSet,
     ]);
     this._getTermsOfUseAcceptance(); // eagerly cache
   }
@@ -154,6 +177,11 @@ export default class ProfileStore extends Store {
   // ========== Current/Custom Theme ========== //
 
   @computed get currentTheme(): Theme {
+    // TODO: Tests were written for the old theme so we need to use it for testing
+    if (environment.isTest()) {
+      return THEMES.YOROI_CLASSIC;
+    }
+
     const { result } = this.getThemeRequest.execute();
     if (this.isCurrentThemeSet && result) {
       // verify content is an actual theme
@@ -162,11 +190,9 @@ export default class ProfileStore extends Store {
         return result;
       }
     }
-    // TODO: We temporarily disable the new theme on mainnet until it's ready
-    // TODO: Tests were written for the old theme so we need to use it for testing
-    return (environment.isMainnet() || environment.isTest()) ?
-      THEMES.YOROI_CLASSIC :
-      THEMES.YOROI_MODERN;
+
+    // THEMES.YOROI_MODERN is the default theme
+    return THEMES.YOROI_MODERN;
   }
 
   @computed get isModernTheme(): boolean {
@@ -216,8 +242,10 @@ export default class ProfileStore extends Store {
     if (html) {
       const attributes: any = html.attributes;
       await this.unsetCustomThemeRequest.execute();
-      await this.setCustomThemeRequest.execute(attributes.style.value,
-        this.getThemeVars({ theme: this.currentTheme }));
+      await this.setCustomThemeRequest.execute({
+        customThemeVars: (attributes.style.value: string),
+        currentThemeVars: this.getThemeVars({ theme: this.currentTheme })
+      });
       await this.getCustomThemeRequest.execute(); // eagerly cache
     }
   };
@@ -287,6 +315,39 @@ export default class ProfileStore extends Store {
     );
   }
 
+  // ========== Selected Explorer ========== //
+
+  @computed get selectedExplorer(): ExplorerType {
+    const { result } = this.getSelectedExplorerRequest.execute();
+    return result || 'seiza';
+  }
+
+  setSelectedExplorer = async ({ explorer }: { explorer: ExplorerType }) => {
+    await this.setSelectedExplorerRequest.execute({ explorer });
+    await this.getSelectedExplorerRequest.execute(); // eagerly cache
+  };
+
+  @computed get hasLoadedSelectedExplorer(): boolean {
+    return (
+      this.getSelectedExplorerRequest.wasExecuted &&
+      this.getSelectedExplorerRequest.result !== null
+    );
+  }
+
+  // ========== Show/hide Balance ========== //
+
+  @computed get shouldHideBalance(): boolean {
+    const { result } = this.getHideBalanceRequest.execute();
+    return result === true;
+  }
+
+  _updateHideBalance = async () => {
+    const shouldHideBalance = this.shouldHideBalance;
+    await this.setHideBalanceRequest.execute(shouldHideBalance);
+    await this.getHideBalanceRequest.execute();
+  };
+
+
   // ========== Redirec Logic ========== //
 
   _redirectToLanguageSelectionIfNoLocaleSet = () => {
@@ -323,6 +384,16 @@ export default class ProfileStore extends Store {
   _redirectToMainUiAfterTermsAreAccepted = () => {
     if (this.areTermsOfUseAccepted && this._isOnTermsOfUsePage()) {
       this._redirectToRoot();
+    }
+  };
+
+  // ========== URI protocol registration ========== //
+
+  _attemptURIProtocolRegistrationIfNoLocaleSet = () => {
+    const { isLoading } = this.stores.loading;
+    if (!isLoading && !this.areTermsOfUseAccepted && !this.isCurrentLocaleSet) {
+      // this is likely the first time the user launches the app
+      registerProtocols();
     }
   };
 }

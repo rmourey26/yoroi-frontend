@@ -16,6 +16,7 @@ import type { WalletAccountNumberPlate } from '../../../domain/Wallet';
 type Props = InjectedDialogContainerProps & {
   mode: "regular" | "paper",
   introMessage?: string,
+  onBack: void => void,
 };
 
 const NUMBER_OF_VERIFIED_ADDRESSES = 1;
@@ -110,10 +111,10 @@ export default class WalletRestoreDialogContainer
         <WalletRestoreVerifyDialog
           addresses={addresses}
           accountPlate={accountPlate}
+          selectedExplorer={this.props.stores.profile.selectedExplorer}
           onNext={this.onVerifiedSubmit}
           onCancel={this.cancelVerification}
           isSubmitting={restoreRequest.isExecuting}
-          onSubmit={this.onSubmit}
           classicTheme={this.props.classicTheme}
           error={restoreRequest.error}
         />
@@ -133,6 +134,7 @@ export default class WalletRestoreDialogContainer
         isSubmitting={restoreRequest.isExecuting}
         onSubmit={this.onSubmit}
         onCancel={this.onCancel}
+        onBack={this.props.onBack}
         error={restoreRequest.error}
         isPaper={isPaper}
         showPaperPassword={isPaper}

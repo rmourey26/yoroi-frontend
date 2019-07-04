@@ -6,7 +6,7 @@ import i18nHelper from '../support/helpers/i18n-helpers';
 import { By } from 'selenium-webdriver';
 import { enterRecoveryPhrase, assertPlate } from './wallet-restoration-steps';
 import { testWallets } from '../mock-chain/TestWallets';
-import { resetChain } from '../mock-chain/mockImporter';
+import { resetChain, serverIssue, serverFixed } from '../mock-chain/mockImporter';
 import { expect } from 'chai';
 
 const { promisify } = require('util');
@@ -25,7 +25,7 @@ const testProgress = {
 BeforeAll(() => {
   rimraf.sync(screenshotsDir);
   fs.mkdirSync(screenshotsDir);
-  setDefaultTimeout(30 * 1000);
+  setDefaultTimeout(60 * 1000);
 
   getMockServer({});
 });
@@ -42,6 +42,22 @@ Before((scenario) => {
 
   // reset our mock chain to avoid modifications bleeding into other tests
   resetChain();
+});
+
+Before({ tags: '@serverDown' }, () => {
+  closeMockServer();
+});
+
+After({ tags: '@serverDown' }, () => {
+  getMockServer({});
+});
+
+Before({ tags: '@serverMaintenance' }, () => {
+  serverIssue();
+});
+
+After({ tags: '@serverMaintenance' }, () => {
+  serverFixed();
 });
 
 Before({ tags: '@invalidWitnessTest' }, () => {
@@ -66,6 +82,14 @@ After(async function () {
 
 const writeFile = promisify(fs.writeFile);
 
+// Steps that contain these patterns will trigger screenshots:
+const SCREENSHOT_STEP_PATTERNS = [
+  'I should see',
+  'I see',
+  'I click',
+  'by clicking',
+];
+
 /** Wrap every step to take screenshots for UI-based testing */
 setDefinitionFunctionWrapper((fn, _, pattern) => {
   if (!pattern) {
@@ -77,8 +101,7 @@ setDefinitionFunctionWrapper((fn, _, pattern) => {
     // Regex patterns contain non-ascii characters.
     // We want to remove this to get a filename-friendly string
     const cleanString = pattern.toString().replace(/[^0-9a-z_ ]/gi, '');
-
-    if (cleanString.includes('I should see')) {
+    if (SCREENSHOT_STEP_PATTERNS.some(pat => cleanString.includes(pat))) {
       await takeScreenshot(this.driver, cleanString);
     }
 
