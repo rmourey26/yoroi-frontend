@@ -27,9 +27,9 @@ export type NetworkConfigType = {
   name: Network
 };
 
-export type Network = 'development' | 'mainnet' | 'staging' | 'testnet' | 'test';
+export type Network = 'development' | 'mainnet' | 'mainnet-tangata' | 'staging' | 'testnet' | 'test';
 export const NetworkType: {
-  DEVELOPMENT: Network, MAINNET: Network, STAGING: Network, TESTNET: Network, TEST: Network
+  DEVELOPMENT: Network, MAINNET: Network, MAINNET_TANGATA: Network, STAGING: Network, TESTNET: Network, TEST: Network
 } = {
-  DEVELOPMENT: 'development', MAINNET: 'mainnet', STAGING: 'staging', TESTNET: 'testnet', TEST: 'test',
+  DEVELOPMENT: 'development', MAINNET: 'mainnet', MAINNET_TANGATA: 'mainnet-tangata', STAGING: 'staging', TESTNET: 'testnet', TEST: 'test',
 };

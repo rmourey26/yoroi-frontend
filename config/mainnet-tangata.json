@@ -1,0 +1,17 @@
+{
+  "network": {
+    "protocolMagic": 764824073,
+    "backendUrl": "https://mainnet-yoroi-backend.yoroiwallet.com",
+    "websocketUrl": "wss://mainnet-yoroi-backend.yoroiwallet.com:443",
+    "name": "mainnet"
+  },
+  "app": {
+    "walletRefreshInterval": 20000,
+    "serverStatusRefreshInterval": 20000,
+    "logsBufferSize": 500,
+    "logsFileSuffix": "-yoroi.log",
+    "addressScanSize": 20,
+    "addressRequestSize": 50,
+    "txsBodiesRequestSize": 150
+  }
+}
